@@ -35,7 +35,7 @@ export default function LoginPage() {
       } else {
         // Redirección silenciosa y rápida
         router.refresh();
-        router.push("/dashboard");
+        router.push("/home");
       }
     } catch (err) {
       setLoading(false);

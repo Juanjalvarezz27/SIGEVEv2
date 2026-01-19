@@ -5,6 +5,33 @@ import prisma from "@/src/lib/prisma";
 import { z } from "zod";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  pages: {
+    signIn: '/login', 
+  },
+  callbacks: {
+    // Metemos los datos del usuario al Token
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.comercioId = user.comercioId;
+        // @ts-ignore
+        token.rol = user.rol?.nombre;
+      }
+      return token;
+    },
+    // Pasamos los datos del Token a la Sesión (lo que ves en el frontend)
+    async session({ session, token }) {
+      if (token && session.user) {
+        // @ts-ignore
+        session.user.id = token.id;
+        // @ts-ignore
+        session.user.comercioId = token.comercioId;
+        // @ts-ignore
+        session.user.rol = token.rol;
+      }
+      return session;
+    },
+  },
   providers: [
     Credentials({
       credentials: {
@@ -18,7 +45,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (parsedCredentials.success) {
           const { email, password } = parsedCredentials.data;
-
+          
+          // Buscar usuario en DB
           const user = await prisma.usuario.findUnique({
             where: { email },
             include: { rol: true }
@@ -26,40 +54,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           if (!user) return null;
 
+          // Verificar contraseña
           const passwordsMatch = await bcrypt.compare(password, user.password);
-
-          if (passwordsMatch) {
-            return user;
-          }
+          if (passwordsMatch) return user;
         }
         return null;
       },
     }),
   ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.comercioId = user.comercioId;
-        // @ts-ignore
-        token.rol = user.rol?.nombre;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (token && session.user) {
-        // @ts-ignore
-        session.user.id = token.id;
-        // @ts-ignore
-        session.user.comercioId = token.comercioId;
-        // @ts-ignore
-        session.user.rol = token.rol;
-      }
-      return session;
-    },
-  },
-
- pages: {
-    signIn: '/login',
-  }, 
-}); 
+});

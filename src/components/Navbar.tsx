@@ -16,12 +16,12 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
   const navItems = [
     { 
       name: "Dashboard", 
-      href: "/dashboard", 
+      href: "/home", 
       icon: <Package size={18} /> 
     },
     { 
       name: "Registrar Venta", 
-      href: "/home", 
+      href: "/home/registrar-venta", 
       icon: <Home size={18} /> 
     },
     { 
