@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+model Producto {
+  id Int @id @default(autoincrement())
+  nombre String
+  precio Float
+  porPeso   Boolean?
+  ventas VentaProducto[]
+}
+
+model Venta {
+  id Int @id @default(autoincrement())
+  total Float                     // Total en USD
+  totalBs Float                   // Total en bolívares (se guarda al momento de la venta)
+  tasaBCV Float                  // Tasa BCV al momento de la venta
+  fechaHora DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')"))
+  metodoPagoId Int
+
+  metodoPago MetodosPago @relation(fields: [metodoPagoId], references: [id])
+  productos VentaProducto[]
+}
+
+model VentaProducto {
+  id                Int     @id @default(autoincrement())
+  ventaId           Int
+  productoId        Int
+  cantidad          Int      // Para productos por UNIDAD: cantidad, para PESO: siempre 1
+  peso              String?   // Para productos por peso (kg)
+  precioUnitario    Float    // Precio en USD por unidad/kg al momento de la venta
+  precioUnitarioBs  Float    // Precio en Bs por unidad/kg al momento de la venta
+  
+  venta      Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  producto   Producto @relation(fields: [productoId], references: [id])
+  
+  @@unique([ventaId, productoId])
+}
+
+model MetodosPago {
+  id Int @id @default(autoincrement())
+  nombre String
+  ventas Venta[]
+}
