@@ -4,46 +4,103 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
+// AUTENTICACIÓN Y MULTI-TENANCY
+// --------------------------------------
+
+model Rol {
+  id          String    @id @default(uuid())
+  nombre      String    @unique 
+  usuarios    Usuario[]
+}
+
+model Comercio {
+  id          String   @id @default(uuid())
+  nombre      String
+  slug        String   @unique
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  usuarios    Usuario[]
+  productos   Producto[]
+  ventas      Venta[]
+  metodosPago MetodosPago[]
+}
+
+model Usuario {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  nombre      String
+  
+  rolId       String
+  rol         Rol      @relation(fields: [rolId], references: [id])
+  
+  comercioId  String?  
+  comercio    Comercio? @relation(fields: [comercioId], references: [id])
+}
+
+// LÓGICA DE NEGOCIO (POR COMERCIO)
+// --------------------------------------
+
 model Producto {
-  id Int @id @default(autoincrement())
-  nombre String
-  precio Float
+  id        String  @id @default(uuid())
+  nombre    String
+  precio    Float
   porPeso   Boolean?
-  ventas VentaProducto[]
+  
+  comercioId String
+  comercio   Comercio @relation(fields: [comercioId], references: [id])
+  
+  ventas    VentaProducto[]
+
+  @@index([comercioId])
 }
 
 model Venta {
-  id Int @id @default(autoincrement())
-  total Float                     // Total en USD
-  totalBs Float                   // Total en bolívares (se guarda al momento de la venta)
-  tasaBCV Float                  // Tasa BCV al momento de la venta
+  id        String   @id @default(uuid())
+  total     Float
+  totalBs   Float
+  tasaBCV   Float
   fechaHora DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')"))
-  metodoPagoId Int
+  
+  metodoPagoId String
+  metodoPago   MetodosPago @relation(fields: [metodoPagoId], references: [id])
+  
+  comercioId   String
+  comercio     Comercio @relation(fields: [comercioId], references: [id])
+  
+  productos    VentaProducto[]
 
-  metodoPago MetodosPago @relation(fields: [metodoPagoId], references: [id])
-  productos VentaProducto[]
+  @@index([comercioId])
 }
 
 model VentaProducto {
-  id                Int     @id @default(autoincrement())
-  ventaId           Int
-  productoId        Int
-  cantidad          Int      // Para productos por UNIDAD: cantidad, para PESO: siempre 1
-  peso              String?   // Para productos por peso (kg)
-  precioUnitario    Float    // Precio en USD por unidad/kg al momento de la venta
-  precioUnitarioBs  Float    // Precio en Bs por unidad/kg al momento de la venta
+  id               String  @id @default(uuid())
+  cantidad         Int
+  peso             String?
+  precioUnitario   Float
+  precioUnitarioBs Float
   
+  ventaId    String
   venta      Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
-  producto   Producto @relation(fields: [productoId], references: [id])
   
+  productoId String
+  producto   Producto @relation(fields: [productoId], references: [id])
+
   @@unique([ventaId, productoId])
 }
 
 model MetodosPago {
-  id Int @id @default(autoincrement())
+  id     String @id @default(uuid())
   nombre String
+  
+  comercioId String
+  comercio   Comercio @relation(fields: [comercioId], references: [id])
+  
   ventas Venta[]
+
+  @@index([comercioId])
 }

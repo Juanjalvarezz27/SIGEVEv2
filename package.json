@@ -9,16 +9,21 @@
     "reset": "npx prisma migrate reset && npx prisma db push"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "date-fns": "^4.1.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.561.0",
     "next": "16.0.10",
+    "next-auth": "^5.0.0-beta.30",
     "react": "19.2.1",
     "react-dom": "19.2.1",
-    "react-toastify": "^11.0.5"
+    "react-hot-toast": "^2.6.0",
+    "react-toastify": "^11.0.5",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@prisma/client": "^6.19.0",
+    "@types/bcryptjs": "^2.4.6",
     "@types/lodash": "^4.17.21",
     "@types/node": "^20.19.27",
     "@types/react": "^19",
