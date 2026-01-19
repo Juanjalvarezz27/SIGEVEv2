@@ -1,91 +1,87 @@
-import { auth } from "@/src/auth";
-import prisma from "@/src/lib/prisma";
-import { redirect } from "next/navigation";
-import { signOut } from "@/src/auth";
+"use client";
 
-export default async function DashboardPage() {
-  // 1. Verificar Sesión
-  const session = await auth();
+import { useEffect, useState } from "react";
+import { Store, ShieldCheck, Activity, Loader2 } from "lucide-react";
+import ProductosList from "@/src/components/inventario/ProductosList";
+import type { UserData } from "@/src/types"; 
 
-  // Si no hay usuario, lo mandamos al login (Protección de ruta)
-  if (!session?.user) {
-    redirect("/api/auth/signin");
+export default function HomePage() {
+  const [data, setData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch("/api/datos-usuario"); 
+        if (res.ok) {
+          const json = await res.json();
+          setData(json);
+        }
+      } catch (error) {
+        console.error("Error cargando perfil", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // ESTADO DE CARGA 
+  if (loading) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto flex justify-center items-center h-64">
+        <Loader2 className="animate-spin text-indigo-600 w-10 h-10" />
+      </div>
+    );
   }
 
-  // 2. Lógica de Base de Datos (Buscar nombre del comercio)
-  let nombreComercio = "Sin Comercio Asignado";
-  let estadoComercio = false;
+  // Si no hay datos (por error), mostramos algo básico o null
+  if (!data) return null;
 
-  if (session.user.comercioId) {
-    const comercio = await prisma.comercio.findUnique({
-      where: { id: session.user.comercioId },
-      select: { nombre: true, activo: true }
-    });
-    
-    if (comercio) {
-      nombreComercio = comercio.nombre;
-      estadoComercio = comercio.activo;
-    }
-  }
+  const nombreComercio = data.comercio?.nombre || "Sin Comercio";
+  const esActivo = data.comercio?.activo || false;
 
-  // 3. Renderizar la Vista Privada
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
-      <div className="max-w-md w-full bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
-          
-        {/* Encabezado */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white text-center">
-          <h1 className="text-2xl font-bold">¡Hola, {session.user.nombre}! 👋</h1>
-          <p className="text-blue-100 text-sm mt-1">{session.user.email}</p>
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      
+      {/* HEADER / INFO DEL COMERCIO */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            ¡Hola, {data.nombre}! <span className="text-2xl">👋</span>
+          </h1>
+          <div className="flex items-center gap-2 text-gray-500 mt-1">
+            <Store size={18} />
+            <span className="text-sm font-medium">
+              Panel de: <span className="text-indigo-600 font-bold">{nombreComercio}</span>
+            </span>
+          </div>
         </div>
 
-        {/* Cuerpo */}
-        <div className="p-8">
-          <div className="text-center mb-6">
-            <p className="text-gray-500 text-sm font-medium uppercase tracking-wide">
-              Estás administrando
-            </p>
-            <h2 className="text-3xl font-extrabold text-gray-800 mt-2">
-              {nombreComercio}
-            </h2>
-            
-            {/* Badges */}
-            <div className="flex justify-center gap-2 mt-4">
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${estadoComercio ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {estadoComercio ? '🟢 ACTIVO' : '🔴 INACTIVO'}
-              </span>
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
-                🛡️ {session.user.rol}
-              </span>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-100 my-6"></div>
-
-          <div className="space-y-3">
-            {/* Aquí podrías poner links a otras partes del sistema */}
-            <button className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-md transition-all transform hover:scale-[1.02]">
-              🚀 Empezar a Vender
-            </button>
-
-            {/* Formulario de Logout (Server Action Inline) */}
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/" });
-              }}
-            >
-              <button type="submit" className="w-full py-3 px-4 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 rounded-xl font-semibold transition-colors">
-                Cerrar Sesión
-              </button>
-            </form>
-          </div>
+        <div className="flex items-center gap-3">
           
-          <p className="text-center text-xs text-gray-400 mt-6 font-mono">
-            ID Comercio: {session.user.comercioId?.slice(0, 8)}...
-          </p>
+          <div className={`px-4 py-2 rounded-xl flex items-center gap-2 text-xs font-bold border ${
+            esActivo 
+              ? 'bg-green-50 text-green-700 border-green-100' 
+              : 'bg-red-50 text-red-700 border-red-100'
+          }`}>
+            <Activity size={14} />
+            {esActivo ? 'ACTIVO' : 'INACTIVO'}
+          </div>
+
+          <div className="px-4 py-2 rounded-xl bg-gray-50 text-gray-600 border border-gray-200 flex items-center gap-2 text-xs font-bold uppercase">
+            <ShieldCheck size={14} />
+            {data.rol}
+          </div>
         </div>
       </div>
+
+      <div className="w-full">
+         <ProductosList/>
+      </div>
+
     </div>
   );
 }
