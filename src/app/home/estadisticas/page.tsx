@@ -5,12 +5,16 @@ import { BarChart3, Calendar } from 'lucide-react';
 import FiltrosPeriodo from '@/src/components/Estadisticas/FiltrosPeriodo';
 import TarjetasResumen from '@/src/components/Estadisticas/TarjetasResumen';
 import TablaVentasDetalladas from '@/src/components/Estadisticas/TablaVentasDetalladas';
+import GraficosVentas from '@/src/components/Estadisticas/GraficosVentas';
 
 export default function EstadisticasPage() {
   const [estadisticas, setEstadisticas] = useState<any>(null);
+  const [graficos, setGraficos] = useState<any>(null);
   const [ventasDetalladas, setVentasDetalladas] = useState<any[]>([]);
   const [cargando, setCargando] = useState(false);
-  const [periodo, setPeriodo] = useState('hoy');
+  
+  // CAMBIO: Default 'semana' para ver gráfico por días al inicio
+  const [periodo, setPeriodo] = useState('semana'); 
   const [fecha, setFecha] = useState('');
 
   const obtenerFechaActual = useCallback(() => {
@@ -39,6 +43,7 @@ export default function EstadisticasPage() {
       const data = await res.json();
       setEstadisticas(data);
       setVentasDetalladas(data.ventasDetalladas || []);
+      setGraficos(data.graficos);
 
       if (nuevoPeriodo && nuevoPeriodo !== periodo) setPeriodo(nuevoPeriodo);
       if (nuevaFecha) setFecha(nuevaFecha);
@@ -95,13 +100,22 @@ export default function EstadisticasPage() {
              </div>
            )}
 
-           {/* Tarjetas Superiores */}
+           {/* 1. Tarjetas Superiores */}
            <TarjetasResumen 
              estadisticas={estadisticas.estadisticas} 
              periodo={estadisticas.periodo} 
            />
 
-           {/* Tabla Detallada (Sección Desplegable) */}
+           {/* 2. GRÁFICOS */}
+           {graficos && (
+             <GraficosVentas 
+               dataTendencia={graficos.tendencia} 
+               dataMetodos={graficos.metodos}
+               periodo={periodo}
+             />
+           )}
+
+           {/* 3. Tabla Detallada */}
            <TablaVentasDetalladas 
              ventas={ventasDetalladas} 
              periodo={estadisticas.periodo} 
