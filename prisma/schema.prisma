@@ -27,6 +27,7 @@ model Comercio {
   productos   Producto[]
   ventas      Venta[]
   metodosPago MetodosPago[]
+  deudas      Deuda[]
 }
 
 model Usuario {
@@ -73,6 +74,9 @@ model Venta {
   comercio     Comercio @relation(fields: [comercioId], references: [id])
   
   productos    VentaProducto[]
+  
+  deudaId      String?  @unique
+  deuda        Deuda?   @relation(fields: [deudaId], references: [id], onDelete: Cascade)
 
   @@index([comercioId])
 }
@@ -101,6 +105,26 @@ model MetodosPago {
   comercio   Comercio @relation(fields: [comercioId], references: [id])
   
   ventas Venta[]
+
+  @@index([comercioId])
+}
+
+model Deuda {
+  id          String   @id @default(uuid())
+  tipo        String   // "COBRAR" | "PAGAR"
+  persona     String
+  descripcion String?
+  monto       Float
+  abonado     Float    @default(0)
+  estado      String   @default("PENDIENTE")
+  fecha       DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')")) 
+
+  telefono    String?  
+  fechaPago   DateTime? 
+  venta       Venta?
+  
+  comercioId  String
+  comercio    Comercio @relation(fields: [comercioId], references: [id])
 
   @@index([comercioId])
 }

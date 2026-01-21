@@ -116,6 +116,7 @@ export async function GET(request: NextRequest) {
       include: {
         productos: { include: { producto: true } },
         metodoPago: true,
+        deuda: true, // <--- CAMBIO CLAVE: INCLUIMOS LA RELACIÓN DEUDA
       },
       orderBy: { fechaHora: 'asc' },
     });
@@ -132,7 +133,6 @@ export async function GET(request: NextRequest) {
         horasMap.set(horaRaw, (horasMap.get(horaRaw) || 0) + v.total);
       });
 
-      // Rellenar huecos (8am a 8pm por defecto, o dinámico)
       const horaInicio = 8;
       const horaFin = 20;
       const horasConVentas = Array.from(horasMap.keys());
@@ -146,10 +146,9 @@ export async function GET(request: NextRequest) {
       graficoTendencia = Array.from(horasMap.entries())
         .sort((a, b) => a[0] - b[0])
         .map(([hora, total]) => {
-          // --- CORRECCIÓN AQUÍ: Formato ultra corto "8 am" ---
           const ampm = hora < 12 ? 'am' : 'pm';
           const hora12 = hora % 12 || 12;
-          const nombreHora = `${hora12} ${ampm}`; // Resultado: "8 am", "9 am"
+          const nombreHora = `${hora12} ${ampm}`;
           return { name: nombreHora, total };
         });
 
