@@ -1,50 +1,55 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/src/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { auth } from '@/src/auth'; 
 
 export async function GET(request: Request) {
   try {
+    // 1. SEGURIDAD: Verificar sesión
+    const session = await auth();
+    if (!session?.user?.comercioId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '200');
+    const limit = parseInt(searchParams.get('limit') || '30'); // Ajusté a 30 por defecto
     const search = searchParams.get('search') || '';
     const skip = (page - 1) * limit;
 
-    // Construir condiciones de búsqueda correctamente tipadas
-    const where: Prisma.ProductoWhereInput = search ? {
-      OR: [
-        {
-          nombre: {
-            contains: search,
-            mode: Prisma.QueryMode.insensitive
-          }
-        },
-      ],
-    } : {};
+    // 2. FILTRADO: Solo productos de ESTE comercio
+    const where: Prisma.ProductoWhereInput = {
+      comercioId: session.user.comercioId,
+      ...(search ? {
+        OR: [
+          {
+            nombre: {
+              contains: search,
+              mode: Prisma.QueryMode.insensitive
+            }
+          },
+        ],
+      } : {})
+    };
 
-    // Obtener productos con paginación - INCLUYENDO porPeso
+    // Obtener productos y total
     const [productos, total] = await Promise.all([
       prisma.producto.findMany({
         where,
-        orderBy: {
-          nombre: 'asc',
-        },
+        orderBy: { nombre: 'asc' },
         skip,
         take: limit,
-        select: { 
-          id: true,
+        select: {
+          id: true, 
           nombre: true,
           precio: true,
-          porPeso: true, 
+          porPeso: true,
         },
       }),
       prisma.producto.count({ where }),
     ]);
 
-    // Calcular páginas
     const totalPages = Math.ceil(total / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
 
     return NextResponse.json({
       productos,
@@ -53,10 +58,11 @@ export async function GET(request: Request) {
         limit,
         total,
         totalPages,
-        hasNextPage,
-        hasPrevPage,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
       },
     });
+
   } catch (error) {
     console.error('Error al obtener productos:', error);
     return NextResponse.json(

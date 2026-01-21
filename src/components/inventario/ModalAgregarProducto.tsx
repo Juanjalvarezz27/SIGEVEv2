@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Package, DollarSign, X, Plus, Save, Weight } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { toast } from 'react-toastify'; 
 
 interface ModalAgregarProductoProps {
   isOpen: boolean;
   onClose: () => void;
-  onProductoCreado: (producto: { id: number; nombre: string; precio: number; porPeso: boolean | null }) => void;
+  onProductoCreado: (producto: { id: string; nombre: string; precio: number; porPeso: boolean | null }) => void;
   loading?: boolean;
 }
 
@@ -21,12 +21,12 @@ const ModalAgregarProducto = ({
   const [precio, setPrecio] = useState('');
   const [porPeso, setPorPeso] = useState<boolean>(false);
   const [errors, setErrors] = useState<{nombre?: string; precio?: string}>({});
+  const [localLoading, setLocalLoading] = useState(false); 
 
-  // Validar formato de precio (hasta 3 decimales)
+  const isLoading = loading || localLoading;
+
   const validarPrecioFormato = (valor: string): boolean => {
     if (!valor) return true;
-    
-    // Validar que tenga hasta 3 decimales
     const regex = /^\d+(\.\d{0,3})?$/;
     return regex.test(valor);
   };
@@ -58,24 +58,19 @@ const ModalAgregarProducto = ({
   };
 
   const handlePrecioChange = (value: string) => {
-    // Permitir solo números y un punto decimal
     const cleanedValue = value.replace(/[^\d.]/g, '');
-    
-    // Evitar múltiples puntos decimales
     const parts = cleanedValue.split('.');
+    let finalValue = cleanedValue;
+
     if (parts.length > 2) {
-      // Si hay más de un punto, mantener solo el primero
-      value = parts[0] + '.' + parts.slice(1).join('');
-    } else {
-      value = cleanedValue;
+      finalValue = parts[0] + '.' + parts.slice(1).join('');
     }
-    
-    // Limitar a 3 decimales
+
     if (parts.length === 2 && parts[1].length > 3) {
-      value = parts[0] + '.' + parts[1].slice(0, 3);
+      finalValue = parts[0] + '.' + parts[1].slice(0, 3);
     }
-    
-    setPrecio(value);
+
+    setPrecio(finalValue);
     if (errors.precio) setErrors({...errors, precio: undefined});
   };
 
@@ -83,6 +78,7 @@ const ModalAgregarProducto = ({
     e.preventDefault();
 
     if (validarFormulario()) {
+      setLocalLoading(true);
       try {
         const response = await fetch('/api/productos/nuevo', {
           method: 'POST',
@@ -99,30 +95,23 @@ const ModalAgregarProducto = ({
         const data = await response.json();
 
         if (response.ok) {
-          toast.success('¡Producto creado exitosamente!', {
-            className: "border border-emerald-200 bg-emerald-50 text-emerald-800 rounded-lg shadow-sm",
-          });
-
+          toast.success('¡Producto creado exitosamente!');
           onProductoCreado(data.producto);
           resetForm();
           onClose();
         } else {
-          if (data.error.includes('Ya existe')) {
-            setErrors({ nombre: data.error });
-            toast.error(data.error, {
-              className: "border border-red-200 bg-red-50 text-red-800 rounded-lg shadow-sm",
-            });
+          // Manejo específico de errores del backend
+          if (data.error?.includes('Ya existe')) {
+            setErrors({ nombre: 'Ya existe un producto con este nombre.' });
           } else {
-            toast.error(data.error || 'Error al crear producto', {
-              className: "border border-red-200 bg-red-50 text-red-800 rounded-lg shadow-sm",
-            });
+            toast.error(data.error || 'Error al crear producto');
           }
         }
       } catch (error) {
         console.error('Error:', error);
-        toast.error('Error de conexión al servidor', {
-          className: "border border-red-200 bg-red-50 text-red-800 rounded-lg shadow-sm",
-        });
+        toast.error('Error de conexión al servidor');
+      } finally {
+        setLocalLoading(false);
       }
     }
   };
@@ -143,13 +132,14 @@ const ModalAgregarProducto = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div
+      <div 
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={handleClose}
       />
 
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full">
+        <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full animate-in fade-in zoom-in duration-200">
+          
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div className="flex items-center">
@@ -158,13 +148,13 @@ const ModalAgregarProducto = ({
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Nuevo Producto</h3>
-                <p className="text-sm text-gray-500">Agregar producto al inventario</p>
+                <p className="text-sm text-gray-500">Agregar al inventario</p>
               </div>
             </div>
             <button
               onClick={handleClose}
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              disabled={loading}
+              disabled={isLoading}
             >
               <X className="h-5 w-5 text-gray-500" />
             </button>
@@ -189,23 +179,13 @@ const ModalAgregarProducto = ({
                       setNombre(e.target.value);
                       if (errors.nombre) setErrors({...errors, nombre: undefined});
                     }}
-                    className={`
-                      pl-10 pr-4 py-2.5 w-full
-                      border rounded-lg text-sm
-                      focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500
-                      ${errors.nombre ? 'border-red-300' : 'border-gray-300'}
-                    `}
-                    placeholder="Ej: Leche Entera 1L"
-                    disabled={loading}
+                    className={`pl-10 pr-4 py-2.5 w-full border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.nombre ? 'border-red-300' : 'border-gray-300'}`}
+                    placeholder="Ej: Harina de Maíz"
+                    disabled={isLoading}
                     maxLength={100}
                   />
                 </div>
-                {errors.nombre && (
-                  <p className="mt-1 text-sm text-red-600">{errors.nombre}</p>
-                )}
-                <div className="mt-1 text-xs text-gray-500">
-                  Nombre descriptivo del producto
-                </div>
+                {errors.nombre && <p className="mt-1 text-sm text-red-600">{errors.nombre}</p>}
               </div>
 
               {/* Campo Precio */}
@@ -218,54 +198,39 @@ const ModalAgregarProducto = ({
                     <DollarSign className="h-4 w-4 text-gray-400" />
                   </div>
                   <input
-                    type="text" // Cambiado de "number" a "text" para mejor control
-                    inputMode="decimal" // Para teclado numérico en móviles
+                    type="text"
+                    inputMode="decimal"
                     value={precio}
                     onChange={(e) => handlePrecioChange(e.target.value)}
-                    className={`
-                      pl-10 pr-4 py-2.5 w-full
-                      border rounded-lg text-sm
-                      focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500
-                      ${errors.precio ? 'border-red-300' : 'border-gray-300'}
-                    `}
+                    className={`pl-10 pr-4 py-2.5 w-full border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${errors.precio ? 'border-red-300' : 'border-gray-300'}`}
                     placeholder="0.000"
-                    disabled={loading}
+                    disabled={isLoading}
                   />
                 </div>
-                {errors.precio && (
-                  <p className="mt-1 text-sm text-red-600">{errors.precio}</p>
-                )}
-                <div className="mt-1 text-xs text-gray-500">
-                  {porPeso
-                    ? "Precio por kilogramo (kg) - hasta 3 decimales"
-                    : "Precio por unidad - hasta 3 decimales"}
-                </div>
+                {errors.precio && <p className="mt-1 text-sm text-red-600">{errors.precio}</p>}
               </div>
 
               {/* Checkbox "Se vende por peso" */}
-              <div className="pt-2">
+              <div className="pt-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
                 <div className="flex items-center">
                   <input
                     type="checkbox"
-                    id="porPeso"
+                    id="porPesoAdd"
                     checked={porPeso}
                     onChange={(e) => setPorPeso(e.target.checked)}
-                    disabled={loading}
-                    className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                    disabled={isLoading}
+                    className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded cursor-pointer"
                   />
-                  <label
-                    htmlFor="porPeso"
-                    className="ml-3 flex items-center text-sm text-gray-700"
-                  >
+                  <label htmlFor="porPesoAdd" className="ml-3 flex items-center text-sm font-medium text-gray-700 cursor-pointer">
                     <Weight className="h-4 w-4 mr-2 text-gray-500" />
-                    Este producto se vende por peso (kg)
+                    Venta por Peso (Granel)
                   </label>
                 </div>
-                <div className="mt-2 text-xs text-gray-500 ml-7">
-                  {porPeso
-                    ? "El precio ingresado es por kilogramo. Ej: Queso a $6.675/kg"
-                    : "El precio ingresado es por unidad. Ej: Lata de refresco a $1.250"}
-                </div>
+                <p className="mt-2 text-xs text-gray-500 ml-7">
+                  {porPeso 
+                    ? "El precio se calculará por Kilogramo (Kg)." 
+                    : "El precio se calculará por Unidad."}
+                </p>
               </div>
             </div>
 
@@ -274,17 +239,17 @@ const ModalAgregarProducto = ({
               <button
                 type="button"
                 onClick={handleClose}
-                disabled={loading}
-                className="px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                disabled={isLoading}
+                className="px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                disabled={loading}
-                className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-medium rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                disabled={isLoading}
+                className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-medium rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all flex items-center shadow-md shadow-emerald-200"
               >
-                {loading ? (
+                {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Creando...

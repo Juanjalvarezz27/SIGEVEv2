@@ -6,9 +6,9 @@ import { Package, DollarSign, X, Save, Weight } from 'lucide-react';
 interface ModalEditarProductoProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (id: number, nombre: string, precio: number, porPeso: boolean | null) => Promise<void>;
+  onSave: (id: string, nombre: string, precio: number, porPeso: boolean | null) => Promise<void>;
   producto: {
-    id: number;
+    id: string; 
     nombre: string;
     precio: number;
     porPeso?: boolean | null;
@@ -31,8 +31,6 @@ const ModalEditarProducto = ({
   // Validar formato de precio (hasta 3 decimales)
   const validarPrecioFormato = (valor: string): boolean => {
     if (!valor) return true;
-    
-    // Validar que tenga hasta 3 decimales
     const regex = /^\d+(\.\d{0,3})?$/;
     return regex.test(valor);
   };
@@ -41,33 +39,29 @@ const ModalEditarProducto = ({
   useEffect(() => {
     if (producto) {
       setNombre(producto.nombre);
-      // Formatear precio para mostrar todos los decimales
-      setPrecio(parseFloat(producto.precio.toString()).toString());
-      // Convertir null/undefined a false, true queda true
+      setPrecio(producto.precio.toString());
       setPorPeso(producto.porPeso === true);
       setErrors({});
     }
   }, [producto]);
 
   const handlePrecioChange = (value: string) => {
-    // Permitir solo números y un punto decimal
     const cleanedValue = value.replace(/[^\d.]/g, '');
     
     // Evitar múltiples puntos decimales
     const parts = cleanedValue.split('.');
+    let finalValue = cleanedValue;
+
     if (parts.length > 2) {
-      // Si hay más de un punto, mantener solo el primero
-      value = parts[0] + '.' + parts.slice(1).join('');
-    } else {
-      value = cleanedValue;
+      finalValue = parts[0] + '.' + parts.slice(1).join('');
     }
-    
+
     // Limitar a 3 decimales
     if (parts.length === 2 && parts[1].length > 3) {
-      value = parts[0] + '.' + parts[1].slice(0, 3);
+      finalValue = parts[0] + '.' + parts[1].slice(0, 3);
     }
-    
-    setPrecio(value);
+
+    setPrecio(finalValue);
     if (errors.precio) setErrors({...errors, precio: undefined});
   };
 
@@ -100,10 +94,9 @@ const ModalEditarProducto = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (validarFormulario()) {
-      // Enviar porPeso: true si está marcado, null si no
+    if (validarFormulario() && producto) {
       await onSave(
-        producto!.id,
+        producto.id,
         nombre,
         parseFloat(precio),
         porPeso ? true : null
@@ -121,14 +114,15 @@ const ModalEditarProducto = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Fondo oscuro */}
-      <div
+      <div 
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={handleClose}
       />
 
       {/* Contenido del modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full">
+        <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full animate-in fade-in zoom-in duration-200">
+          
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div className="flex items-center">
@@ -137,7 +131,7 @@ const ModalEditarProducto = ({
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Editar Producto</h3>
-                <p className="text-sm text-gray-500">ID: #{producto.id}</p>
+                <p className="text-xs text-gray-500 font-mono">ID: {producto.id.slice(0, 8)}...</p>
               </div>
             </div>
             <button
@@ -168,23 +162,13 @@ const ModalEditarProducto = ({
                       setNombre(e.target.value);
                       if (errors.nombre) setErrors({...errors, nombre: undefined});
                     }}
-                    className={`
-                      pl-10 pr-4 py-2.5 w-full
-                      border rounded-lg text-sm
-                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                      ${errors.nombre ? 'border-red-300' : 'border-gray-300'}
-                    `}
+                    className={`pl-10 pr-4 py-2.5 w-full border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.nombre ? 'border-red-300' : 'border-gray-300'}`}
                     placeholder="Ej: Leche Entera 1L"
                     disabled={loading}
                     maxLength={100}
                   />
                 </div>
-                {errors.nombre && (
-                  <p className="mt-1 text-sm text-red-600">{errors.nombre}</p>
-                )}
-                <div className="mt-1 text-xs text-gray-500">
-                  Nombre descriptivo del producto
-                </div>
+                {errors.nombre && <p className="mt-1 text-sm text-red-600">{errors.nombre}</p>}
               </div>
 
               {/* Campo Precio */}
@@ -197,54 +181,39 @@ const ModalEditarProducto = ({
                     <DollarSign className="h-4 w-4 text-gray-400" />
                   </div>
                   <input
-                    type="text" // Cambiado de "number" a "text" para mejor control
+                    type="text"
                     inputMode="decimal"
                     value={precio}
                     onChange={(e) => handlePrecioChange(e.target.value)}
-                    className={`
-                      pl-10 pr-4 py-2.5 w-full
-                      border rounded-lg text-sm
-                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                      ${errors.precio ? 'border-red-300' : 'border-gray-300'}
-                    `}
+                    className={`pl-10 pr-4 py-2.5 w-full border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.precio ? 'border-red-300' : 'border-gray-300'}`}
                     placeholder="0.000"
                     disabled={loading}
                   />
                 </div>
-                {errors.precio && (
-                  <p className="mt-1 text-sm text-red-600">{errors.precio}</p>
-                )}
-                <div className="mt-1 text-xs text-gray-500">
-                  {porPeso
-                    ? "Precio por kilogramo (kg) - hasta 3 decimales"
-                    : "Precio por unidad - hasta 3 decimales"}
-                </div>
+                {errors.precio && <p className="mt-1 text-sm text-red-600">{errors.precio}</p>}
               </div>
 
-              {/* Campo "Se vende por peso" */}
-              <div className="pt-2">
+              {/* Checkbox "Se vende por peso" */}
+              <div className="pt-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
                 <div className="flex items-center">
                   <input
                     type="checkbox"
-                    id="porPeso"
+                    id="porPesoEdit"
                     checked={porPeso}
                     onChange={(e) => setPorPeso(e.target.checked)}
                     disabled={loading}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
                   />
-                  <label
-                    htmlFor="porPeso"
-                    className="ml-3 flex items-center text-sm text-gray-700"
-                  >
+                  <label htmlFor="porPesoEdit" className="ml-3 flex items-center text-sm font-medium text-gray-700 cursor-pointer">
                     <Weight className="h-4 w-4 mr-2 text-gray-500" />
-                    Este producto se vende por peso (kg)
+                    Venta por Peso (Granel)
                   </label>
                 </div>
-                <div className="mt-2 text-xs text-gray-500 ml-7">
-                  {porPeso
-                    ? "Marcado: El precio es por kilogramo. Ej: Queso a $6.675/kg"
-                    : "Desmarcado: El precio es por unidad. Ej: Lata de refresco a $1.250"}
-                </div>
+                <p className="mt-2 text-xs text-gray-500 ml-7">
+                  {porPeso 
+                    ? "El precio se calculará por Kilogramo (Kg)." 
+                    : "El precio se calculará por Unidad."}
+                </p>
               </div>
             </div>
 
@@ -254,14 +223,14 @@ const ModalEditarProducto = ({
                 type="button"
                 onClick={handleClose}
                 disabled={loading}
-                className="px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all flex items-center shadow-md shadow-blue-200"
               >
                 {loading ? (
                   <>
