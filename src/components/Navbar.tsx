@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Package, Home, BarChart3, ReceiptText, LogOut } from "lucide-react";
+import { Package, Home, BarChart3, ReceiptText, LogOut, Settings } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { NavbarProps, UserSession } from "../types/login";
 import LogoutModal from "./LogoutModal"; 
@@ -35,6 +35,11 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
       name: "Estadísticas", 
       href: "/home/estadisticas", 
       icon: <BarChart3 size={18} /> 
+    },
+    { 
+      name: "Configuración", 
+      href: "/home/configuracion", 
+      icon: <Settings size={18} /> 
     },
   ];
 
