@@ -1,66 +1,93 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/src/lib/prisma';
+import { auth } from '@/src/auth';
 
-// Función para obtener fechas en hora de Venezuela
-function obtenerFechasVenezuela() {
+function obtenerRangoFechaVenezuela() {
   const ahora = new Date();
+  const fechaVenezuela = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Caracas' }));
   
-  // Convertir a hora de Venezuela
-  const ahoraVenezuela = new Date(ahora.toLocaleString('en-US', {
-    timeZone: 'America/Caracas'
-  }));
-  
-  // Ajustar al día actual en Venezuela
-  const inicioDia = new Date(ahoraVenezuela);
+  const inicioDia = new Date(fechaVenezuela);
   inicioDia.setHours(0, 0, 0, 0);
   
-  const finDia = new Date(ahoraVenezuela);
+  const finDia = new Date(fechaVenezuela);
   finDia.setHours(23, 59, 59, 999);
-  
-  return { inicioDia, finDia, ahoraVenezuela };
+
+  return { inicioDia, finDia };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { inicioDia, finDia, ahoraVenezuela } = obtenerFechasVenezuela();
+    const session = await auth();
+    if (!session?.user?.comercioId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
 
+    // Obtener parámetros de paginación
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = 20; // 20 ventas por página
+    const skip = (page - 1) * limit;
+
+    const { inicioDia, finDia } = obtenerRangoFechaVenezuela();
+    const whereClause = {
+      comercioId: session.user.comercioId,
+      fechaHora: { gte: inicioDia, lte: finDia },
+    };
+
+    // 1. ESTADÍSTICAS GLOBALES (De todo el día, sin paginar)
+    // Usamos aggregate para que sea super rápido
+    const statsAgregados = await prisma.venta.aggregate({
+      where: whereClause,
+      _sum: { total: true, totalBs: true },
+      _count: { id: true }
+    });
+
+    // Para contar productos vendidos necesitamos una consulta un poco diferente
+    // O podemos aproximarlo, pero lo ideal es hacerlo bien:
+    const ventasDelDia = await prisma.venta.findMany({
+      where: whereClause,
+      select: {
+        productos: { select: { cantidad: true, producto: { select: { porPeso: true } } } }
+      }
+    });
+
+    const productosVendidos = ventasDelDia.reduce((sum, venta) => {
+      return sum + venta.productos.reduce((pSum, prod) => 
+        pSum + (prod.producto.porPeso ? 1 : prod.cantidad), 0);
+    }, 0);
+
+    const estadisticas = {
+      totalVentas: statsAgregados._count.id,
+      totalIngresos: statsAgregados._sum.total || 0,
+      totalIngresosBs: statsAgregados._sum.totalBs || 0,
+      productosVendidos: productosVendidos,
+      fecha: new Date().toISOString(),
+    };
+
+    // 2. VENTAS PAGINADAS (Solo las 20 de esta página)
     const ventas = await prisma.venta.findMany({
-      where: {
-        fechaHora: {
-          gte: inicioDia,
-          lt: finDia,
-        },
-      },
+      where: whereClause,
       include: {
         metodoPago: true,
-        productos: {
-          include: {
-            producto: true,
-          },
-        },
+        productos: { include: { producto: true } },
       },
-      orderBy: {
-        fechaHora: 'desc',
-      },
+      orderBy: { fechaHora: 'desc' },
+      skip: skip,
+      take: limit,
     });
 
-    return NextResponse.json({
-      ventas,
-      estadisticas: {
-        totalVentas: ventas.length,
-        totalIngresos: ventas.reduce((sum, venta) => sum + venta.total, 0),
-        totalIngresosBs: ventas.reduce((sum, venta) => sum + venta.totalBs, 0),
-        productosVendidos: ventas.reduce((sum, venta) => {
-          return sum + venta.productos.reduce((prodSum, prod) => prodSum + prod.cantidad, 0);
-        }, 0),
-        fecha: ahoraVenezuela.toISOString(),
-      },
-    });
+    // Datos de paginación para el frontend
+    const pagination = {
+      page,
+      limit,
+      total: statsAgregados._count.id,
+      totalPages: Math.ceil(statsAgregados._count.id / limit),
+    };
+
+    return NextResponse.json({ ventas, estadisticas, pagination });
+
   } catch (error) {
-    console.error('Error al obtener ventas de hoy:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener ventas de hoy' },
-      { status: 500 }
-    );
+    console.error('Error historial:', error);
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
