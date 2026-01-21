@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/src/lib/prisma';
 import { auth } from '@/src/auth';
 
-// ... (Las funciones obtenerInicioDiaVenezuelaUTC, etc. se mantienen igual) ...
 function obtenerInicioDiaVenezuelaUTC(fechaString: string): Date {
   const [year, month, day] = fechaString.split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, day, 4, 0, 0, 0));
