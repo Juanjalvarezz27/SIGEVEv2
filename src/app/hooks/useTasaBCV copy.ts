@@ -27,33 +27,30 @@ const useTasaBCV = (): TasaBCVState => {
   // Función para obtener la tasa
   const obtenerTasa = useCallback(async (): Promise<number | null> => {
     try {
-      // INTENTO 1: ExchangeRate API (Ahora es la principal)
-      const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data?.rates?.VES) {
-          const tasaExchange = data.rates.VES;
-          console.log('✅ Tasa obtenida de ExchangeRate:', tasaExchange);
-          return tasaExchange;
-        }
-      }
-
-      // INTENTO 2: API de DolarAPI (Ahora es el respaldo/backup)
-      console.log('⚠️ Falló ExchangeRate, intentando con DolarAPI...');
-      
-      const backupResponse = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', {
+      // Intento 1: API de DolarAPI (la más confiable para BCV)
+      const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', {
         cache: 'no-store',
         headers: {
           'Accept': 'application/json',
         }
       });
 
+      if (response.ok) {
+        const data = await response.json();
+        if (data && typeof data.promedio === 'number') {
+          console.log('✅ Tasa obtenida de DolarAPI:', data.promedio);
+          return data.promedio;
+        }
+      }
+
+      // Intento 2: API alternativa
+      const backupResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
       if (backupResponse.ok) {
         const backupData = await backupResponse.json();
-        if (backupData && typeof backupData.promedio === 'number') {
-          console.log('✅ Tasa de respaldo obtenida de DolarAPI:', backupData.promedio);
-          return backupData.promedio;
+        if (backupData?.rates?.VES) {
+          const tasaAproximada = backupData.rates.VES;
+          console.log('⚠️ Tasa aproximada de ExchangeRate:', tasaAproximada);
+          return tasaAproximada;
         }
       }
 
@@ -62,14 +59,13 @@ const useTasaBCV = (): TasaBCVState => {
     } catch (apiError) {
       console.error('❌ Error en APIs:', apiError);
       
-      // Intento 3: Usar localStorage si hay tasa guardada (Cache local)
+      // Intento 3: Usar localStorage si hay tasa guardada
       try {
         const tasaGuardada = localStorage.getItem('tasa_bcv');
         if (tasaGuardada) {
           const parsed = JSON.parse(tasaGuardada);
-          // Validez de 24 horas
           if (parsed.tasa && new Date().getTime() - new Date(parsed.fecha).getTime() < 24 * 60 * 60 * 1000) {
-            console.log('📁 Tasa obtenida de caché local:', parsed.tasa);
+            console.log('📁 Tasa obtenida de caché:', parsed.tasa);
             return parsed.tasa;
           }
         }
@@ -77,8 +73,8 @@ const useTasaBCV = (): TasaBCVState => {
         console.error('Error accediendo localStorage:', localError);
       }
 
-      // Tasa por defecto (Hardcoded)
-      console.log('🔄 Usando tasa por defecto del sistema');
+      // Tasa por defecto
+      console.log('🔄 Usando tasa por defecto');
       return TASA_POR_DEFECTO;
     }
   }, []);
@@ -116,7 +112,7 @@ const useTasaBCV = (): TasaBCVState => {
     }
   }, [obtenerTasa]);
 
-  // Cargar la tasa al iniciar y configurar intervalo
+  // Cargar la tasa al iniciar
   useEffect(() => {
     actualizar();
 

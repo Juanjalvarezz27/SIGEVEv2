@@ -2,21 +2,21 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
-import HeaderVentas from '../../components/RegistroVentas/HeaderVentas';
-import ProductosDisponibles from '../../components/RegistroVentas/ProductosDisponibles';
-import CarritoVenta from '../../components/RegistroVentas/CarritoVenta';
-import useTasaBCV from '../../app/hooks/useTasaBCV';
+import HeaderVentas from '@/src/components/RegistroVentas/HeaderVentas';
+import ProductosDisponibles from '@/src/components/RegistroVentas/ProductosDisponibles';
+import CarritoVenta from '@/src/components/RegistroVentas/CarritoVenta';
+import useTasaBCV from '@/src/app/hooks/useTasaBCV';
 
-// Types
+// Types actualizados (IDs como string)
 interface Producto {
-  id: number;
+  id: string;
   nombre: string;
   precio: number;
   porPeso?: boolean | null;
 }
 
 interface MetodoPago {
-  id: number;
+  id: string;
   nombre: string;
 }
 
@@ -35,13 +35,11 @@ interface PaginationData {
   hasPrevPage: boolean;
 }
 
-// Función debounce personalizada
 function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout;
-
   return (...args: Parameters<T>) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
@@ -57,7 +55,6 @@ export default function VentasPage() {
   const [cargando, setCargando] = useState(false);
   const [cargandoProductos, setCargandoProductos] = useState(false);
 
-  // Estados para paginación
   const [pagination, setPagination] = useState<PaginationData>({
     page: 1,
     limit: 20,
@@ -67,10 +64,8 @@ export default function VentasPage() {
     hasPrevPage: false,
   });
 
-  // Usar el hook de tasa BCV
-  const { tasa, loading: loadingTasa, actualizar: actualizarTasa } = useTasaBCV();
+  const { tasa, loading: loadingTasa } = useTasaBCV();
 
-  // Usar useRef para mantener una referencia estable del debounce
   const cargarProductosRef = useRef(
     debounce(async (search: string, page: number) => {
       try {
@@ -96,12 +91,10 @@ export default function VentasPage() {
     }, 500)
   );
 
-  // Cargar métodos de pago al inicio
   useEffect(() => {
     cargarMetodosPago();
   }, []);
 
-  // Efecto para cargar productos cuando cambia búsqueda o página
   useEffect(() => {
     cargarProductosRef.current(busquedaProducto, pagination.page);
   }, [busquedaProducto, pagination.page]);
@@ -116,19 +109,17 @@ export default function VentasPage() {
     }
   };
 
-  // Agregar producto a la venta
   const agregarProducto = (producto: Producto) => {
     const productoExistente = productosSeleccionados.find(p => p.id === producto.id);
 
     if (productoExistente) {
-      // Si ya existe, incrementar cantidad o peso
       setProductosSeleccionados(prev =>
         prev.map(p =>
           p.id === producto.id
             ? {
                 ...p,
                 cantidad: producto.porPeso ? p.cantidad : p.cantidad + 1,
-                subtotal: producto.porPeso 
+                subtotal: producto.porPeso
                   ? (p.peso || 0.001) * p.precio
                   : (p.cantidad + 1) * p.precio
               }
@@ -136,28 +127,26 @@ export default function VentasPage() {
         )
       );
     } else {
-      // Si no existe, agregarlo
       setProductosSeleccionados(prev => [
         ...prev,
         {
           ...producto,
           cantidad: 1,
-          peso: producto.porPeso ? 0.001 : undefined,
-          subtotal: producto.porPeso 
-            ? 0.001 * producto.precio
+          peso: producto.porPeso ? 1.000 : undefined, // Peso por defecto 1kg
+          subtotal: producto.porPeso
+            ? 1.000 * producto.precio
             : producto.precio
         }
       ]);
     }
 
-    toast.success(`${producto.nombre} agregado al carrito`, {
-      icon: <span>➕</span>,
+    toast.success(`${producto.nombre} agregado`, {
       position: "bottom-right",
+      autoClose: 2000
     });
   };
 
-  // Actualizar peso de un producto
-  const actualizarPeso = (id: number, nuevoPeso: number) => {
+  const actualizarPeso = (id: string, nuevoPeso: number) => {
     setProductosSeleccionados(prev =>
       prev.map(producto =>
         producto.id === id
@@ -171,8 +160,7 @@ export default function VentasPage() {
     );
   };
 
-  // Incrementar cantidad
-  const incrementarCantidad = (id: number) => {
+  const incrementarCantidad = (id: string) => {
     setProductosSeleccionados(prev =>
       prev.map(producto =>
         producto.id === id && !producto.porPeso
@@ -186,8 +174,7 @@ export default function VentasPage() {
     );
   };
 
-  // Decrementar cantidad
-  const decrementarCantidad = (id: number) => {
+  const decrementarCantidad = (id: string) => {
     setProductosSeleccionados(prev =>
       prev.map(producto =>
         producto.id === id && producto.cantidad > 1 && !producto.porPeso
@@ -201,44 +188,28 @@ export default function VentasPage() {
     );
   };
 
-  // Eliminar producto del carrito
-  const eliminarProducto = (id: number) => {
-    const producto = productosSeleccionados.find(p => p.id === id);
+  const eliminarProducto = (id: string) => {
     setProductosSeleccionados(prev => prev.filter(p => p.id !== id));
-
-    if (producto) {
-      toast.info(`${producto.nombre} eliminado del carrito`, {
-        icon: <span>🗑️</span>,
-        position: "bottom-right",
-      });
-    }
   };
 
-  // Calcular total
   const calcularTotal = () => {
     return productosSeleccionados.reduce((total, producto) => total + producto.subtotal, 0);
   };
 
-  // Cambiar página
   const cambiarPagina = (nuevaPagina: number) => {
     if (nuevaPagina >= 1 && nuevaPagina <= pagination.totalPages) {
       setPagination(prev => ({ ...prev, page: nuevaPagina }));
     }
   };
 
-  // Registrar venta
   const registrarVenta = async () => {
     if (productosSeleccionados.length === 0) {
-      toast.error('Debe agregar al menos un producto', {
-        position: "top-center",
-      });
+      toast.error('Carrito vacío');
       return;
     }
 
     if (!metodoPagoId) {
-      toast.error('Debe seleccionar un método de pago', {
-        position: "top-center",
-      });
+      toast.error('Selecciona un método de pago');
       return;
     }
 
@@ -250,57 +221,42 @@ export default function VentasPage() {
       const productosParaVenta = productosSeleccionados.map(p => ({
         id: p.id,
         cantidad: p.porPeso ? 1 : p.cantidad,
-        peso: p.peso ? p.peso.toFixed(3) : null, // Guardar como string
+        peso: p.peso ? p.peso.toFixed(3) : null,
         precioUnitario: p.precio
       }));
 
       const ventaData = {
         productos: productosParaVenta,
-        metodoPagoId: parseInt(metodoPagoId),
+        metodoPagoId: metodoPagoId, // ID como string
         total,
         tasaBCV: tasa
       };
 
       const response = await fetch('/api/ventas', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ventaData),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        toast.success('¡Venta registrada exitosamente!', {
-          className: "border border-emerald-200 bg-emerald-50 text-emerald-800 rounded-lg shadow-sm",
-          position: "top-center",
-        });
-
+        toast.success('¡Venta registrada!', { position: "top-center" });
         setProductosSeleccionados([]);
         setMetodoPagoId('');
         setBusquedaProducto('');
       } else {
-        toast.error(data.error || 'Error al registrar la venta', {
-          className: "border border-red-200 bg-red-50 text-red-800 rounded-lg shadow-sm",
-          position: "top-center",
-        });
+        toast.error(data.error || 'Error al registrar');
       }
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Error de conexión', {
-        className: "border border-red-200 bg-red-50 text-red-800 rounded-lg shadow-sm",
-        position: "top-center",
-      });
+      toast.error('Error de conexión');
     } finally {
       setCargando(false);
     }
   };
 
-  // Limpiar búsqueda
-  const limpiarBusqueda = () => {
-    setBusquedaProducto('');
-  };
+  const limpiarBusqueda = () => setBusquedaProducto('');
 
   return (
     <div className="p-6 max-w-7xl mx-auto min-h-screen">
