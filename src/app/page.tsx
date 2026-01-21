@@ -7,7 +7,10 @@ import {
   ShieldCheck, 
   Zap, 
   Tags,      
-  CreditCard  
+  CreditCard,
+  Mail,       // Nuevo icono
+  Phone,      // Nuevo icono
+  MessageCircle // Nuevo icono (opcional para WhatsApp)
 } from "lucide-react";
 
 export default async function Home() {
@@ -122,8 +125,60 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* === NUEVA SECCIÓN DE CONTACTO === */}
+      <section id="contact" className="py-24 bg-gray-900 text-white relative overflow-hidden">
+        {/* Decoración de fondo */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+           <div className="absolute right-0 top-0 w-96 h-96 bg-indigo-500 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+           <div className="absolute left-0 bottom-0 w-96 h-96 bg-blue-500 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
+        </div>
+
+        <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            ¿Listo para modernizar tu negocio?
+          </h2>
+          <p className="text-lg text-gray-300 mb-12 max-w-2xl mx-auto">
+            Contáctanos para obtener una demostración personalizada o resolver tus dudas. Estamos aquí para ayudarte a escalar.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* Tarjeta Email */}
+            <a 
+              href="mailto:jjsalvarezz@gmail.com" 
+              className="group flex flex-col items-center p-8 bg-gray-800 rounded-2xl border border-gray-700 hover:border-indigo-500 hover:bg-gray-800/80 transition-all duration-300"
+            >
+              <div className="w-14 h-14 bg-gray-700 rounded-full flex items-center justify-center mb-4 group-hover:bg-indigo-600 transition-colors">
+                <Mail className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold mb-1">Correo Electrónico</h3>
+              <p className="text-gray-400 group-hover:text-white transition-colors">
+                jjsalvarezz@gmail.com
+              </p>
+            </a>
+
+            {/* Tarjeta Teléfono */}
+            <a 
+              href="https://wa.me/584129164371" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex flex-col items-center p-8 bg-gray-800 rounded-2xl border border-gray-700 hover:border-green-500 hover:bg-gray-800/80 transition-all duration-300"
+            >
+              <div className="w-14 h-14 bg-gray-700 rounded-full flex items-center justify-center mb-4 group-hover:bg-green-600 transition-colors">
+                <MessageCircle className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold mb-1">WhatsApp / Teléfono</h3>
+              <p className="text-gray-400 group-hover:text-white transition-colors">
+                +58 412-916-4371
+              </p>
+            </a>
+
+          </div>
+        </div>
+      </section>
+
       {/* FOOTER */}
-      <footer className="bg-gray-900 text-gray-400 py-12 border-t border-gray-800">
+      <footer className="bg-black text-gray-500 py-12 border-t border-gray-800">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
