@@ -12,7 +12,8 @@ import {
   Settings, 
   BanknoteArrowDown, 
   LogIn,
-  Boxes
+  Boxes,
+  PhoneCall 
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { NavbarProps, UserSession } from "../types/login";
@@ -111,7 +112,7 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-8">
                  <Link href="/" className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
                    <Home size={20} />
                    <span className="hidden sm:inline">Inicio</span>
@@ -120,6 +121,11 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
                  <Link href="/demo" className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
                    <Boxes size={20} />
                    <span className="hidden sm:inline">Demo</span>
+                 </Link>
+
+                  <Link href="/contacto" className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
+                   <PhoneCall size={20} />
+                   <span className="hidden sm:inline">Contacto</span>
                  </Link>
                   
                  <Link href="/api/auth/signin" className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all">

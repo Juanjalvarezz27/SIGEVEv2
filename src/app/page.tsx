@@ -28,17 +28,17 @@ export default async function Home() {
   // CARACTERÍSTICAS
   const features = [
     {
-      title: "Estadísticas diarias y por periodos", // CAMBIO 1
+      title: "Estadísticas diarias y por periodos",
       description: "Visualiza el rendimiento de tu negocio. Gráficas claras de ventas por día, rangos de fecha y totales en Divisas/Bolívares.",
       icon: <BarChart3 className="w-6 h-6 text-white" />,
     },
     {
-      title: "Notas de Entrega por WhatsApp", // CAMBIO 2
+      title: "Notas de Entrega por WhatsApp",
       description: "Olvídate del papel. Envía Notas de Entrega digitales directamente al WhatsApp de tu cliente con un clic.",
       icon: <Smartphone className="w-6 h-6 text-white" />,
     },
     {
-      title: "Gestión de Deuda", // CAMBIO 3
+      title: "Gestión de Deuda",
       description: "Controla quién te debe. Sistema completo de cuentas por cobrar con abonos parciales e historial.",
       icon: <Banknote className="w-6 h-6 text-white" />, 
     },
@@ -48,7 +48,7 @@ export default async function Home() {
       icon: <Box className="w-6 h-6 text-white" />,
     },
     {
-      title: "Punto de Venta Ágil", // (Movido aquí para mantener el POS en la lista)
+      title: "Punto de Venta Ágil",
       description: "Vende en segundos. Tasa BCV automática, cálculo en dos monedas y descuento de inventario en tiempo real.",
       icon: <Calculator className="w-6 h-6 text-white" />, 
     },
@@ -79,6 +79,10 @@ export default async function Home() {
       {/* === HERO SECTION === */}
       <section className="relative flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-6 min-h-[90vh] border-b border-gray-100 overflow-hidden">
         
+        {/* --- NUEVO: FONDO DE PUNTOS --- */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-30 bg-[radial-gradient(#6366f1_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none"></div>
+
+        {/* Mancha de color decorativa (Blur) */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-200/20 rounded-full blur-[100px] pointer-events-none"></div>
 
         <div className="text-center max-w-5xl z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 pt-10">
@@ -104,7 +108,7 @@ export default async function Home() {
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link 
-              href="/login/demo" 
+              href="/demo" 
               className="group inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all bg-indigo-600 rounded-full hover:bg-indigo-700 hover:scale-105 shadow-xl hover:shadow-indigo-500/40 ring-4 ring-transparent hover:ring-indigo-100"
             >
               Prueba la Demo
