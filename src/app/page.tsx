@@ -8,9 +8,14 @@ import {
   Zap, 
   Tags,      
   CreditCard,
-  Mail,       // Nuevo icono
-  Phone,      // Nuevo icono
-  MessageCircle // Nuevo icono (opcional para WhatsApp)
+  Mail,       
+  MessageCircle, 
+  CheckCircle2, 
+  ArrowRight,
+  Store,
+  Calculator,
+  Smartphone,
+  Banknote
 } from "lucide-react";
 
 export default async function Home() {
@@ -20,87 +25,126 @@ export default async function Home() {
     redirect("/home");
   }
 
+  // CARACTERÍSTICAS
   const features = [
     {
-      title: "Gestión de Inventario",
-      description: "Control total de tu stock en tiempo real. Entradas, salidas y alertas de bajo stock.",
-      icon: <Box className="w-6 h-6 text-white" />,
-    },
-    {
-      title: "Análisis y Reportes",
-      description: "Toma decisiones basadas en datos. Gráficos de ventas diarias, mensuales y por producto.",
+      title: "Estadísticas diarias y por periodos", // CAMBIO 1
+      description: "Visualiza el rendimiento de tu negocio. Gráficas claras de ventas por día, rangos de fecha y totales en Divisas/Bolívares.",
       icon: <BarChart3 className="w-6 h-6 text-white" />,
     },
     {
-      title: "Gestión de Precios", 
-      description: "Administra múltiples listas de precios, descuentos y promociones de forma flexible.",
-      icon: <Tags className="w-6 h-6 text-white" />, 
+      title: "Notas de Entrega por WhatsApp", // CAMBIO 2
+      description: "Olvídate del papel. Envía Notas de Entrega digitales directamente al WhatsApp de tu cliente con un clic.",
+      icon: <Smartphone className="w-6 h-6 text-white" />,
     },
     {
-      title: "Seguridad SaaS",
-      description: "Tus datos están aislados y protegidos con los mejores estándares de la industria.",
+      title: "Gestión de Deuda", // CAMBIO 3
+      description: "Controla quién te debe. Sistema completo de cuentas por cobrar con abonos parciales e historial.",
+      icon: <Banknote className="w-6 h-6 text-white" />, 
+    },
+    {
+      title: "Inventario Inteligente",
+      description: "Evita robos y quiebres de stock. Control detallado de entradas, salidas y alertas de bajo inventario.",
+      icon: <Box className="w-6 h-6 text-white" />,
+    },
+    {
+      title: "Punto de Venta Ágil", // (Movido aquí para mantener el POS en la lista)
+      description: "Vende en segundos. Tasa BCV automática, cálculo en dos monedas y descuento de inventario en tiempo real.",
+      icon: <Calculator className="w-6 h-6 text-white" />, 
+    },
+    {
+      title: "Seguridad y Roles",
+      description: "Duerme tranquilo. Accesos restringidos para vendedores y respaldos automáticos de tu data en la nube.",
       icon: <ShieldCheck className="w-6 h-6 text-white" />,
-    },
-    {
-      title: "Métodos de Pago", 
-      description: "Registra ventas con tarjetas, efectivo, transferencias o billeteras digitales fácilmente.",
-      icon: <CreditCard className="w-6 h-6 text-white" />, 
-    },
-    {
-      title: "Rápido y Escalable",
-      description: "Creado con tecnología moderna para que tu negocio nunca se detenga.",
-      icon: <Zap className="w-6 h-6 text-white" />,
     },
   ];
 
+  const logos = [
+    "BODEGA EXPRESS", "FERRETERÍA CENTRAL", "MINI-MARKET", "FARMACIA SAN JOSÉ", "LICORERÍA EL REY",
+    "BODEGA EXPRESS", "FERRETERÍA CENTRAL", "MINI-MARKET", "FARMACIA SAN JOSÉ", "LICORERÍA EL REY"
+  ];
+
   return (
-    <div className="bg-white">
+    <div className="bg-white scroll-smooth">
+      <style>{`
+        @keyframes scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-scroll {
+          animation: scroll 20s linear infinite;
+        }
+      `}</style>
       
-      {/* SECCIÓN HERO */}
-      <section className="relative flex flex-col items-center justify-center bg-gray-50 px-6 min-h-[calc(100vh-5rem)] border-b border-gray-200">
-        <div className="text-center max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* === HERO SECTION === */}
+      <section className="relative flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-6 min-h-[90vh] border-b border-gray-100 overflow-hidden">
+        
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-200/20 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div className="text-center max-w-5xl z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 pt-10">
           
-          <div className="inline-block mb-4 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold uppercase tracking-wide">
-            v2.0 Disponible
+          <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 bg-white border border-indigo-100 text-indigo-700 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm hover:shadow-md transition-all">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+            </span>
+            Sistema 100% Operativo
           </div>
 
-          <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 mb-6 tracking-tight leading-tight">
-            <span className="md:whitespace-nowrap">Sistema Multi-Comercio</span>
-            <span className="block text-indigo-600">SaaS</span>
+          <h1 className="text-5xl md:text-7xl font-black text-gray-900 mb-8 tracking-tight leading-[1.1]">
+            Gestiona tu comercio <br className="hidden md:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500">
+              con precisión milimétrica
+            </span>
           </h1>
           
-          <p className="text-xl text-gray-600 mb-10 max-w-xl mx-auto leading-relaxed">
-            La plataforma todo en uno para gestionar tu inventario, ventas y clientes. 
-            Potencia tu negocio con tecnología simple, segura y eficiente.
+          <p className="text-xl md:text-2xl text-gray-500 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
+            El sistema SaaS completo: Ventas, Inventario, Deudas y Reportes en un solo lugar.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link 
-              href="/api/auth/signin" 
-              className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all bg-indigo-600 rounded-full hover:bg-indigo-700 shadow-xl hover:shadow-indigo-500/30 transform hover:-translate-y-1"
+              href="/login/demo" 
+              className="group inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all bg-indigo-600 rounded-full hover:bg-indigo-700 hover:scale-105 shadow-xl hover:shadow-indigo-500/40 ring-4 ring-transparent hover:ring-indigo-100"
             >
-              Comenzar Ahora
+              Prueba la Demo
+              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             
             <Link 
               href="#features" 
-              className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-gray-700 transition-all bg-white border border-gray-200 rounded-full hover:bg-gray-50 hover:border-gray-300 shadow-sm"
+              className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-gray-600 transition-all bg-transparent hover:bg-gray-50 rounded-full hover:text-gray-900"
             >
-              Ver Características
+              Ver Funcionalidades
             </Link>
           </div>
+
+          {/* Carrusel */}
+          <div className="mt-16 w-full max-w-4xl mx-auto overflow-hidden opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+            <div className="flex whitespace-nowrap animate-scroll">
+               {logos.map((logo, index) => (
+                 <div key={index} className="mx-8 flex items-center gap-2 font-bold text-xl text-gray-400">
+                    <Store className="w-5 h-5 mb-1" /> {logo}
+                 </div>
+               ))}
+            </div>
+            <div className="absolute left-0 bottom-0 w-20 h-24 bg-gradient-to-r from-gray-50/50 to-transparent z-10 pointer-events-none"></div>
+            <div className="absolute right-0 bottom-0 w-20 h-24 bg-gradient-to-l from-gray-50/50 to-transparent z-10 pointer-events-none"></div>
+          </div>
+
         </div>
       </section>
 
-      {/* SECCIÓN DE CARACTERÍSTICAS */}
-      <section id="features" className="py-24 bg-white scroll-mt-20">
+      {/* === CARACTERÍSTICAS === */}
+      <section id="features" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Todo lo que necesitas para crecer
+          <div className="text-center mb-20">
+            <h2 className="text-sm font-bold text-indigo-600 uppercase tracking-widest mb-3">Potencia Real</h2>
+            <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-6">
+              Todo lo que puedes hacer
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Herramientas diseñadas para la eficiencia operativa de tu comercio.
+            <p className="text-xl text-gray-500 max-w-3xl mx-auto">
+              Hemos simplificado las herramientas potentes para que tú solo te encargues de vender.
             </p>
           </div>
 
@@ -108,15 +152,19 @@ export default async function Home() {
             {features.map((feature, index) => (
               <div 
                 key={index} 
-                className="group p-8 bg-gray-50 rounded-2xl border border-gray-100 hover:border-indigo-100 hover:shadow-lg transition-all duration-300"
+                className="group relative p-8 bg-white rounded-3xl border border-gray-100 hover:border-indigo-100 shadow-sm hover:shadow-2xl hover:shadow-indigo-100/50 transition-all duration-300 overflow-hidden"
               >
-                <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
+                {/* Elemento decorativo hover */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-[100px] -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                
+                <div className="relative w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-200 group-hover:rotate-6 transition-transform">
                   {feature.icon}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                
+                <h3 className="relative text-xl font-bold text-gray-900 mb-3 group-hover:text-indigo-700 transition-colors">
                   {feature.title}
                 </h3>
-                <p className="text-gray-600 leading-relaxed">
+                <p className="relative text-gray-500 leading-relaxed group-hover:text-gray-600">
                   {feature.description}
                 </p>
               </div>
@@ -125,73 +173,85 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* === NUEVA SECCIÓN DE CONTACTO === */}
-      <section id="contact" className="py-24 bg-gray-900 text-white relative overflow-hidden">
-        {/* Decoración de fondo */}
-        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-           <div className="absolute right-0 top-0 w-96 h-96 bg-indigo-500 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
-           <div className="absolute left-0 bottom-0 w-96 h-96 bg-blue-500 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
-        </div>
-
-        <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            ¿Listo para modernizar tu negocio?
-          </h2>
-          <p className="text-lg text-gray-300 mb-12 max-w-2xl mx-auto">
-            Contáctanos para obtener una demostración personalizada o resolver tus dudas. Estamos aquí para ayudarte a escalar.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Tarjeta Email */}
-            <a 
-              href="mailto:jjsalvarezz@gmail.com" 
-              className="group flex flex-col items-center p-8 bg-gray-800 rounded-2xl border border-gray-700 hover:border-indigo-500 hover:bg-gray-800/80 transition-all duration-300"
-            >
-              <div className="w-14 h-14 bg-gray-700 rounded-full flex items-center justify-center mb-4 group-hover:bg-indigo-600 transition-colors">
-                <Mail className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-lg font-semibold mb-1">Correo Electrónico</h3>
-              <p className="text-gray-400 group-hover:text-white transition-colors">
-                jjsalvarezz@gmail.com
-              </p>
-            </a>
-
-            {/* Tarjeta Teléfono */}
-            <a 
-              href="https://wa.me/584129164371" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col items-center p-8 bg-gray-800 rounded-2xl border border-gray-700 hover:border-green-500 hover:bg-gray-800/80 transition-all duration-300"
-            >
-              <div className="w-14 h-14 bg-gray-700 rounded-full flex items-center justify-center mb-4 group-hover:bg-green-600 transition-colors">
-                <MessageCircle className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-lg font-semibold mb-1">WhatsApp / Teléfono</h3>
-              <p className="text-gray-400 group-hover:text-white transition-colors">
-                +58 412-916-4371
-              </p>
-            </a>
-
+      {/* === BENEFICIOS === */}
+      <section className="py-24 bg-gray-50 border-y border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
+          <div className="flex-1">
+             <div className="inline-block px-4 py-1 mb-4 rounded-full bg-green-100 text-green-700 font-bold text-xs uppercase">
+               ¿Por qué elegirnos?
+             </div>
+             <h2 className="text-4xl font-bold text-gray-900 mb-6">Deja de perder dinero por desorden administrativo</h2>
+             <p className="text-lg text-gray-600 mb-8">
+               Nuestro sistema está diseñado específicamente para el mercado local, entendiendo los retos de la multimoneda y el inventario dinámico.
+             </p>
+             
+             <ul className="space-y-4">
+               {[
+                 "Diseñado exclusivamente para uso en Computadoras",
+                 "Actualizaciones frecuentes y mejoras constantes",
+                 "Planes flexibles: Mensuales o Trimestrales",
+                 "Soporte técnico directo vía WhatsApp"
+               ].map((item, i) => (
+                 <li key={i} className="flex items-center gap-3">
+                   <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+                   <span className="text-gray-700 font-medium">{item}</span>
+                 </li>
+               ))}
+             </ul>
+          </div>
+          
+          <div className="flex-1 w-full bg-white p-2 rounded-3xl shadow-xl border border-gray-100 rotate-1 hover:rotate-0 transition-transform duration-500">
+             <img 
+                src="/demo.png" 
+                alt="Vista Previa del Dashboard" 
+                className="w-full h-auto rounded-2xl shadow-inner border border-gray-100"
+             />
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="bg-black text-gray-500 py-12 border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
-              JA
-            </div>
-            <span className="text-white font-semibold text-lg">Sistema Multi-Comercio SaaS</span>
-          </div>
-          <p className="text-sm">
-            © {new Date().getFullYear()} Juan Alvarez. Todos los derechos reservados.
-          </p>
-        </div>
-      </footer>
+      {/* === CONTACTO === */}
+      <section id="contact" className="py-24 relative overflow-hidden bg-[#0f172a]">
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/30 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px]"></div>
 
+        <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
+          <h2 className="text-4xl md:text-5xl font-black text-white mb-6">
+            Empieza a optimizar tu negocio hoy
+          </h2>
+          <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
+            Únete a los comercios que ya están ahorrando tiempo y dinero con nuestra plataforma.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            <a 
+              href="https://wa.me/584129164371" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex flex-col items-center p-8 bg-white/5 backdrop-blur-sm rounded-3xl border border-white/10 hover:bg-green-600 hover:border-green-500 transition-all duration-300 cursor-pointer"
+            >
+              <MessageCircle className="w-10 h-10 text-green-400 group-hover:text-white mb-4 transition-colors" />
+              <h3 className="text-xl font-bold text-white mb-1">WhatsApp Directo</h3>
+              <p className="text-gray-400 group-hover:text-white/90 text-sm">Respuesta inmediata</p>
+            </a>
+
+            <a 
+              href="mailto:jjsalvarezz@gmail.com" 
+              className="group flex flex-col items-center p-8 bg-white/5 backdrop-blur-sm rounded-3xl border border-white/10 hover:bg-indigo-600 hover:border-indigo-500 transition-all duration-300 cursor-pointer"
+            >
+              <Mail className="w-10 h-10 text-indigo-400 group-hover:text-white mb-4 transition-colors" />
+              <h3 className="text-xl font-bold text-white mb-1">Correo Electrónico</h3>
+              <p className="text-gray-400 group-hover:text-white/90 text-sm">Soporte y Ventas</p>
+            </a>
+          </div>
+
+          <div className="mt-16 pt-8 border-t border-white/10 flex flex-col items-center">
+             <div className="text-sm text-gray-500 mb-2">Desarrollado por Juan Álvarez</div>
+             <p className="text-xs text-gray-600">© {new Date().getFullYear()} SaaS Platform. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
