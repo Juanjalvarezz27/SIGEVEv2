@@ -5,13 +5,10 @@ import { auth } from '@/src/auth';
 function obtenerRangoFechaVenezuela() {
   const ahora = new Date();
   const fechaVenezuela = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Caracas' }));
-  
   const inicioDia = new Date(fechaVenezuela);
   inicioDia.setHours(0, 0, 0, 0);
-  
   const finDia = new Date(fechaVenezuela);
   finDia.setHours(23, 59, 59, 999);
-
   return { inicioDia, finDia };
 }
 
@@ -22,10 +19,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // Obtener parámetros de paginación
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = 20; // 20 ventas por página
+    const limit = 20;
     const skip = (page - 1) * limit;
 
     const { inicioDia, finDia } = obtenerRangoFechaVenezuela();
@@ -34,16 +30,13 @@ export async function GET(request: Request) {
       fechaHora: { gte: inicioDia, lte: finDia },
     };
 
-    // 1. ESTADÍSTICAS GLOBALES (De todo el día, sin paginar)
-    // Usamos aggregate para que sea super rápido
+    // 1. ESTADÍSTICAS GLOBALES
     const statsAgregados = await prisma.venta.aggregate({
       where: whereClause,
       _sum: { total: true, totalBs: true },
       _count: { id: true }
     });
 
-    // Para contar productos vendidos necesitamos una consulta un poco diferente
-    // O podemos aproximarlo, pero lo ideal es hacerlo bien:
     const ventasDelDia = await prisma.venta.findMany({
       where: whereClause,
       select: {
@@ -52,7 +45,7 @@ export async function GET(request: Request) {
     });
 
     const productosVendidos = ventasDelDia.reduce((sum, venta) => {
-      return sum + venta.productos.reduce((pSum, prod) => 
+      return sum + venta.productos.reduce((pSum, prod) =>
         pSum + (prod.producto.porPeso ? 1 : prod.cantidad), 0);
     }, 0);
 
@@ -64,19 +57,19 @@ export async function GET(request: Request) {
       fecha: new Date().toISOString(),
     };
 
-    // 2. VENTAS PAGINADAS (Solo las 20 de esta página)
+    // 2. VENTAS PAGINADAS (Incluyendo DEUDA)
     const ventas = await prisma.venta.findMany({
       where: whereClause,
       include: {
         metodoPago: true,
         productos: { include: { producto: true } },
+        deuda: true // <--- ESTO ES LA CLAVE
       },
       orderBy: { fechaHora: 'desc' },
       skip: skip,
       take: limit,
     });
 
-    // Datos de paginación para el frontend
     const pagination = {
       page,
       limit,

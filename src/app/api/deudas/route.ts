@@ -25,16 +25,13 @@ async function obtenerTasaServer(): Promise<number> {
 
   return TASA_POR_DEFECTO;
 }
-
-// GET: Obtener deudas
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user?.comercioId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    if (!session?.user?.comercioId) return NextResponse.json([], { status: 401 });
 
     const { searchParams } = new URL(req.url);
-    const tipo = searchParams.get("tipo"); 
-
+    const tipo = searchParams.get("tipo");
     const whereClause: any = { comercioId: session.user.comercioId };
     if (tipo) whereClause.tipo = tipo;
 
@@ -42,29 +39,67 @@ export async function GET(req: NextRequest) {
       where: whereClause,
       orderBy: { fecha: "desc" },
     });
-
     return NextResponse.json(deudas);
   } catch (error) {
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
 
-// POST: Crear nueva deuda
 export async function POST(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.comercioId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
     const body = await req.json();
-    const { tipo, persona, descripcion, monto, telefono } = body;
+    // AHORA RECIBIMOS "productos" (el array del carrito)
+    const { tipo, persona, descripcion, monto, telefono, productos } = body;
+    const montoFloat = parseFloat(monto);
 
-    const deuda = await prisma.deuda.create({
+    // --- LOGICA DE FUSION DE DEUDA (Solo Fiados) ---
+    if (tipo === "COBRAR") {
+      const deudaExistente = await prisma.deuda.findFirst({
+        where: {
+          comercioId: session.user.comercioId,
+          persona: { equals: persona, mode: "insensitive" },
+          tipo: "COBRAR",
+          estado: "PENDIENTE"
+        }
+      });
+
+      if (deudaExistente) {
+        // 1. FUSIONAR JSON
+        const detallesViejos = (deudaExistente.detalles as any[]) || [];
+        // Agregamos una marca de fecha a los nuevos productos para saber cuándo se agregaron
+        const nuevosConFecha = productos.map((p: any) => ({ ...p, fechaAgregado: new Date() }));
+        const detallesFusionados = [...detallesViejos, ...nuevosConFecha];
+
+        // 2. ACTUALIZAR DESCRIPCION (Visual legacy)
+        const fechaHoy = new Date().toLocaleDateString('es-VE');
+        const nuevaDescripcion = `${deudaExistente.descripcion || ''}\n\n--- Agregado el ${fechaHoy} ---\n${descripcion}`;
+        
+        const deudaActualizada = await prisma.deuda.update({
+          where: { id: deudaExistente.id },
+          data: {
+            monto: { increment: montoFloat },
+            descripcion: nuevaDescripcion,
+            detalles: detallesFusionados, // <--- GUARDAMOS JSON
+            telefono: telefono || deudaExistente.telefono,
+            fecha: new Date()
+          }
+        });
+
+        return NextResponse.json(deudaActualizada);
+      }
+    }
+
+    // CREAR NUEVA
+    const nuevosConFecha = productos ? productos.map((p: any) => ({ ...p, fechaAgregado: new Date() })) : [];
+
+    const nuevaDeuda = await prisma.deuda.create({
       data: {
-        tipo,
-        persona,
-        descripcion,
-        telefono,
-        monto: parseFloat(monto),
+        tipo, persona, descripcion, telefono,
+        monto: montoFloat,
+        detalles: nuevosConFecha, // <--- GUARDAMOS JSON
         comercioId: session.user.comercioId,
         fecha: new Date(),
         abonado: 0,
@@ -72,98 +107,84 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json(deuda);
+    return NextResponse.json(nuevaDeuda);
   } catch (error) {
-    return NextResponse.json({ error: "Error creando deuda" }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: "Error procesando" }, { status: 500 });
   }
 }
 
-// PUT: Abonar o Editar
 export async function PUT(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.comercioId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
     const body = await req.json();
-    
-    // CASO 1: EDITAR
+
+    // EDITAR DATOS
     if (body.accion === "EDITAR") {
-        const { id, persona, descripcion, monto, telefono } = body;
-        const deudaEditada = await prisma.deuda.update({
-            where: { id },
-            data: { persona, descripcion, monto: parseFloat(monto), telefono }
-        });
-        return NextResponse.json(deudaEditada);
+      const { id, persona, descripcion, monto, telefono, productos } = body; // Recibimos productos editados
+      return NextResponse.json(await prisma.deuda.update({
+        where: { id },
+        data: { 
+            persona, 
+            descripcion, 
+            monto: parseFloat(monto), 
+            telefono,
+            detalles: productos // <--- Actualizamos el JSON si se editó el carrito
+        }
+      }));
     }
 
-    // CASO 2: ABONAR
-    const { id, abono } = body;
-    const deudaActual = await prisma.deuda.findUnique({ where: { id } });
-    if (!deudaActual) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
+    // ABONAR
+    const { id, abono, metodoPagoId } = body;
+    const deuda = await prisma.deuda.findUnique({ where: { id } });
+    if (!deuda) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
 
-    const nuevoAbonado = deudaActual.abonado + parseFloat(abono);
-    const deudaTotal = deudaActual.monto;
-    // Tolerancia de centavos para evitar errores de flotantes
-    const estaPagado = nuevoAbonado >= (deudaTotal - 0.01);
+    const nuevoAbonado = deuda.abonado + parseFloat(abono);
+    const pagado = nuevoAbonado >= (deuda.monto - 0.01);
 
-    const dataUpdate: any = {
-        abonado: nuevoAbonado,
-        estado: estaPagado ? "PAGADO" : "PENDIENTE",
-    };
-
-    if (estaPagado) {
-        dataUpdate.fechaPago = new Date();
-    }
-
-    // Actualizamos la deuda
-    const deudaActualizada = await prisma.deuda.update({
+    const updated = await prisma.deuda.update({
       where: { id },
-      data: dataUpdate,
+      data: {
+        abonado: nuevoAbonado,
+        estado: pagado ? "PAGADO" : "PENDIENTE",
+        fechaPago: pagado ? new Date() : null
+      }
     });
 
-    // LÓGICA DE VINCULACIÓN: Si se paga una deuda de cobro, crea una venta
-    if (estaPagado && deudaActual.tipo === "COBRAR") {
-        const metodoPago = await prisma.metodosPago.findFirst({
-            where: { comercioId: session.user.comercioId },
-        });
+    if (pagado && deuda.tipo === "COBRAR") {
+       let metodoIdFinal = metodoPagoId;
+       if (!metodoIdFinal) {
+          const metodoDefault = await prisma.metodosPago.findFirst({ where: { comercioId: session.user.comercioId } });
+          metodoIdFinal = metodoDefault?.id;
+       }
 
-        if (metodoPago) {
-            // 1. OBTENEMOS LA TASA REAL DEL SERVIDOR
-            const tasaActual = await obtenerTasaServer();
-
-            await prisma.venta.create({
-                data: {
-                    total: deudaTotal,
-                    totalBs: deudaTotal * tasaActual, // USAMOS TASA REAL
-                    tasaBCV: tasaActual,              // GUARDAMOS TASA REAL
-                    fechaHora: new Date(),
-                    metodoPagoId: metodoPago.id,
-                    comercioId: session.user.comercioId,
-                    deudaId: id, 
-                }
-            });
-        }
+       if (metodoIdFinal) {
+         const tasa = await obtenerTasaServer();
+         await prisma.venta.create({
+            data: {
+                total: deuda.monto,
+                totalBs: deuda.monto * tasa,
+                tasaBCV: tasa,
+                fechaHora: new Date(),
+                metodoPagoId: metodoIdFinal,
+                comercioId: session.user.comercioId,
+                deudaId: id
+            }
+         });
+       }
     }
-
-    return NextResponse.json(deudaActualizada);
+    return NextResponse.json(updated);
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Error actualizando" }, { status: 500 });
+    return NextResponse.json({ error: "Error" }, { status: 500 });
   }
 }
 
-// DELETE: Eliminar
 export async function DELETE(req: Request) {
-    try {
-      const session = await auth();
-      if (!session?.user?.comercioId) return NextResponse.json({ error: "401" }, { status: 401 });
-  
-      const { id } = await req.json();
-  
-      await prisma.deuda.delete({ where: { id } });
-  
-      return NextResponse.json({ success: true });
-    } catch (error) {
-      return NextResponse.json({ error: "Error eliminando" }, { status: 500 });
-    }
+  try {
+    const { id } = await req.json();
+    await prisma.deuda.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch (e) { return NextResponse.json({ error: "Error" }, { status: 500 }); }
 }

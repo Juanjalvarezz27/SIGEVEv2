@@ -113,7 +113,8 @@ model Deuda {
   id          String   @id @default(uuid())
   tipo        String   // "COBRAR" | "PAGAR"
   persona     String
-  descripcion String?
+  descripcion String?  
+  detalles    Json?    
   monto       Float
   abonado     Float    @default(0)
   estado      String   @default("PENDIENTE")
