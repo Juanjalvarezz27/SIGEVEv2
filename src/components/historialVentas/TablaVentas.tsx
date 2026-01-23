@@ -335,7 +335,6 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
                 </button>
               </div>
             </div>
-
           </div>
         </div>
       )}

@@ -25,7 +25,8 @@ export async function POST(request: Request) {
           totalBs,
           tasaBCV: tasaBCV || 0,
           metodoPagoId: metodoPagoId, // ID string
-          comercioId: session.user.comercioId!, // IMPORTANTE: VINCULAR AL COMERCIO
+          comercioId: session.user.comercioId!,
+          fechaHora: new Date(), 
         },
       });
 
@@ -34,7 +35,11 @@ export async function POST(request: Request) {
         productoId: p.id,
         cantidad: p.cantidad,
         peso: p.peso ? p.peso.toString() : null,
-        precioUnitario: p.precioUnitario,
+        
+        // --- CORRECCIÓN AQUÍ ---
+        precioUnitario: p.precioUnitario, 
+        
+        // Esto estaba bien, por eso sí calculaba los Bs
         precioUnitarioBs: p.precioUnitario * (tasaBCV || 0),
       }));
 
