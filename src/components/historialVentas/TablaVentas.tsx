@@ -16,7 +16,7 @@ interface Venta {
   deuda?: {
     persona: string;
     descripcion: string;
-    detalles?: any; // <--- AÑADIDO PARA SOPORTAR JSON
+    detalles?: any;
   };
 }
 
@@ -45,21 +45,59 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
   const enviarPorWhatsApp = () => {
     if (!ventaSeleccionada || !telefonoReceptor) return;
 
-    const fecha = new Date(ventaSeleccionada.fechaHora).toLocaleDateString('es-VE');
-    let mensaje = `NOTA DE ENTREGA\nFecha: ${fecha}\nTotal: $${ventaSeleccionada.total.toFixed(2)}\nBs: ${ventaSeleccionada.totalBs.toFixed(2)}\n\nDETALLE:\n`;
+    // 1. Formatear Fecha y Hora
+    const fechaObj = new Date(ventaSeleccionada.fechaHora);
+    const fechaStr = fechaObj.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const horaStr = fechaObj.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true });
 
+    // 2. Calcular Tasa Implícita (TotalBs / Total$)
+    const tasaCalculada = ventaSeleccionada.total > 0 
+        ? (ventaSeleccionada.totalBs / ventaSeleccionada.total).toFixed(2) 
+        : "0.00";
+
+    // 3. Construir Encabezado
+    let mensaje = `*NOTA DE ENTREGA*\n`;
+    mensaje += `${fechaStr} - ${horaStr}\n`;
+    mensaje += `--------------------------------\n`;
+
+    // 4. Cuerpo (Productos o Deuda)
     if (ventaSeleccionada.deuda) {
-      mensaje += `CLIENTE: ${ventaSeleccionada.deuda.persona}\n\n`;
-      // Preferimos enviar texto plano para WhatsApp si existe, sino generamos desde JSON
-      mensaje += `${ventaSeleccionada.deuda.descripcion || "Pago de cuenta"}\n`;
+      mensaje += `*Cliente:* ${ventaSeleccionada.deuda.persona}\n`;
+      mensaje += `*Concepto:*\n`;
+      
+      // Intentamos usar el JSON si existe para listar bonito, sino la descripción texto
+      if (ventaSeleccionada.deuda.detalles && Array.isArray(ventaSeleccionada.deuda.detalles)) {
+         ventaSeleccionada.deuda.detalles.forEach((p: any) => {
+            const unidad = p.porPeso ? 'kg' : 'und';
+            mensaje += `• ${p.cantidad}${unidad} x ${p.nombre}\n`;
+         });
+      } else {
+         mensaje += `${ventaSeleccionada.deuda.descripcion || "Pago de cuenta pendiente"}\n`;
+      }
+      
     } else {
+      mensaje += `*Productos:*\n`;
       ventaSeleccionada.productos.forEach(p => {
-        mensaje += `${p.cantidad}x ${p.producto.nombre}\n`;
+        // Asumiendo que p tiene precioUnitario, si no, solo cantidad y nombre
+        const unidad = p.peso ? 'kg' : 'und'; 
+        const cantidadStr = p.peso ? p.peso : p.cantidad;
+        mensaje += `• ${cantidadStr} ${unidad} x ${p.producto.nombre}\n`;
       });
     }
 
-    mensaje += `\nMetodo: ${ventaSeleccionada.metodoPago.nombre}`;
+    mensaje += `--------------------------------\n`;
 
+    // 5. Totales y Método
+    mensaje += `*TOTAL: $${ventaSeleccionada.total.toFixed(2)}*\n`;
+    mensaje += `Bs: ${ventaSeleccionada.totalBs.toFixed(2)}\n`;
+    mensaje += `Tasa: BCV (Bs ${tasaCalculada})\n\n`;
+    mensaje += `Método: ${ventaSeleccionada.metodoPago.nombre}\n`;
+    
+    // 6. Pie de página legal
+    mensaje += `--------------------------------\n`;
+    mensaje += `_Este documento es un control de entrega y no sustituye la Factura Fiscal._`;
+
+    // 7. Enviar
     let numeroFinal = telefonoReceptor.replace(/\D/g, '');
     if (numeroFinal.startsWith('0')) numeroFinal = '58' + numeroFinal.substring(1);
     else if (!numeroFinal.startsWith('58')) numeroFinal = '58' + numeroFinal;
@@ -335,6 +373,7 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
                 </button>
               </div>
             </div>
+
           </div>
         </div>
       )}
