@@ -14,8 +14,7 @@ import {
   LogIn,
   Boxes,
   PhoneCall,
-  CircleDollarSign,
-  Layers // Icono opcional para Inventario si lo necesitas
+  CircleDollarSign
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { NavbarProps, UserSession } from "../types/login";
@@ -28,14 +27,13 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
 
   const user = (session?.user as UserSession) || initialUser;
 
-  // TAMAÑO COMPACTO
-  const iconSize = 20;
+  // Tamaño de iconos estándar
+  const iconSize = 18;
 
   const navItems = [
     { name: "Dashboard", href: "/home", icon: <Package size={iconSize} /> },
     { name: "Registrar Venta", href: "/home/registrar-venta", icon: <Home size={iconSize} /> },
     { name: "Ventas", href: "/home/ventas", icon: <ReceiptText size={iconSize} /> },
-    // { name: "Inventario", href: "/home/inventario", icon: <Layers size={iconSize} /> }, // Espacio listo para inventario
     { name: "Estadísticas", href: "/home/estadisticas", icon: <BarChart3 size={iconSize} /> },
     { name: "Deudas", href: "/home/deudas", icon: <BanknoteArrowDown size={iconSize} /> },
     { name: "Caja", href: "/home/caja", icon: <CircleDollarSign size={iconSize} /> },
@@ -45,17 +43,23 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
   return (
     <>
       <nav className="bg-white border-b border-gray-200 h-[64px] shadow-sm sticky top-0 z-50">
-        <div className="w-full max-w-[1600px] mx-auto px-4 flex items-center justify-between h-full">
+        <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 flex items-center justify-between h-full">
 
-          {/* 1. BRANDING (SOLO LOGO) */}
-          {/* Se eliminó el texto para ahorrar espacio */}
+          {/* 1. BRANDING COMPACTO (Siempre igual) */}
           <Link href="/" className="flex items-center flex-shrink-0 group mr-4" title="Ir al Inicio">
             <div className="h-9 w-9 rounded-lg bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200 transition-transform group-hover:scale-105 active:scale-95">
               <span className="text-white font-black text-xs tracking-tighter">SaaS</span>
             </div>
+            {/* Si no hay usuario, mostramos el texto para que se vea bien la landing */}
+            {!user && (
+              <div className="hidden md:block ml-3">
+                 <h1 className="text-base font-bold text-gray-800 leading-tight">Plataforma</h1>
+                 <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Gestión</p>
+              </div>
+            )}
           </Link>
 
-          {/* 2. NAVEGACIÓN (Expandida) */}
+          {/* 2. NAVEGACIÓN CENTRAL (Solo si hay usuario) */}
           {user && (
             <div className="flex-1 flex items-center justify-start md:justify-center px-2 overflow-x-auto no-scrollbar mask-linear">
               <div className="flex items-center gap-1">
@@ -72,12 +76,12 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
                           : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
                         }
                       `}
-                      title={item.name} // Tooltip nativo para cuando solo se ve el icono
+                      title={item.name}
                     >
                       <span className={`${isActive ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600"}`}>
                         {item.icon}
                       </span>
-                      {/* Texto visible SOLO en pantallas XL (más de 1280px) para que quepan muchas rutas */}
+                      {/* Texto oculto en laptops pequeñas, visible en monitores grandes (xl) */}
                       <span className="ml-2 hidden xl:inline-block">{item.name}</span>
                     </Link>
                   );
@@ -86,15 +90,14 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
             </div>
           )}
 
-          {/* 3. USUARIO (Compacto) */}
+          {/* 3. ZONA DERECHA (Usuario o Links Públicos) */}
           <div className="flex items-center gap-3 flex-shrink-0 ml-2">
             {user ? (
+              // --- MODO LOGUEADO (Compacto) ---
               <div className="flex items-center gap-3 pl-3 border-l border-gray-200 h-8">
-                
-                {/* Info de usuario (oculta en móvil) */}
                 <div className="hidden text-right sm:block">
                   <div className="text-sm font-bold text-gray-800 leading-none truncate max-w-[100px]">
-                    {user.nombre?.split(' ')[0]} {/* Solo primer nombre para ahorrar espacio */}
+                    {user.nombre?.split(' ')[0]}
                   </div>
                   <div className="text-[9px] text-gray-500 font-bold uppercase mt-1 text-right truncate max-w-[100px]">
                     {user.rol?.replace('_', ' ') || "USUARIO"}
@@ -114,12 +117,27 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-4">
-                 {/* Links de visita simplificados */}
-                <Link href="/api/auth/signin" className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all">
-                  <LogIn size={18} />
-                  <span className="hidden sm:inline">Ingresar</span>
-                </Link>
+              // --- MODO NO LOGUEADO (Restaurado con Iconos) ---
+              <div className="flex items-center gap-4 sm:gap-6">
+                 <Link href="/" className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
+                   <Home size={20} />
+                   <span className="hidden sm:inline">Inicio</span>
+                 </Link>
+
+                 <Link href="/demo" className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
+                   <Boxes size={20} />
+                   <span className="hidden sm:inline">Demo</span>
+                 </Link>
+
+                 <Link href="/contacto" className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
+                   <PhoneCall size={20} />
+                   <span className="hidden sm:inline">Contacto</span>
+                 </Link>
+                 
+                 <Link href="/api/auth/signin" className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all">
+                   <LogIn size={18} />
+                   <span className="hidden sm:inline">Ingresar</span>
+                 </Link>
               </div>
             )}
           </div>
