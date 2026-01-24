@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShoppingCart, Trash2, Plus, Minus, CreditCard,
-  AlertCircle, Loader2, Check, Wallet, BadgeDollarSign,
-  Smartphone, Building, Weight
+  Loader2, Wallet, BadgeDollarSign, Smartphone, Building, Weight,
+  UserMinus, X, User, FileText, Phone
 } from 'lucide-react';
+import { toast } from 'react-toastify';
 
+// Interfaces simplificadas
 interface ProductoSeleccionado {
-  id: string; // ID string
+  id: string;
   nombre: string;
   precio: number;
   cantidad: number;
@@ -18,7 +20,7 @@ interface ProductoSeleccionado {
 }
 
 interface MetodoPago {
-  id: string; // ID string
+  id: string;
   nombre: string;
 }
 
@@ -35,7 +37,8 @@ interface CarritoVentaProps {
   registrarVenta: () => void;
   cargando: boolean;
   tasaBCV: number | null;
-  loadingTasa: boolean;
+  limpiarCarrito: () => void;
+  loadingTasa?: boolean;
 }
 
 const getMetodoPagoIcon = (nombre: string) => {
@@ -60,56 +63,150 @@ export default function CarritoVenta({
   registrarVenta,
   cargando,
   tasaBCV,
-  loadingTasa
+  limpiarCarrito
 }: CarritoVentaProps) {
+  
   const total = calcularTotal();
+  
+  // --- ESTADOS LOCALES DEL CARRITO ---
   const [pesoInputs, setPesoInputs] = useState<{ [key: string]: string }>({});
   const [isEditing, setIsEditing] = useState<{ [key: string]: boolean }>({});
+
+  // --- ESTADOS DEL MODAL DE FIADO ---
+  const [modalFiadoOpen, setModalFiadoOpen] = useState(false);
   
-  // Sincronizar inputs al cambiar productos
+  // Campos del Formulario
+  const [clienteNombre, setClienteNombre] = useState("");
+  const [clienteTelefono, setClienteTelefono] = useState("");
+  const [clienteNota, setClienteNota] = useState("");
+  const [guardandoFiado, setGuardandoFiado] = useState(false);
+
+  // --- LÓGICA DE AUTOCOMPLETADO ---
+  const [deudoresExistentes, setDeudoresExistentes] = useState<any[]>([]);
+  const [sugerencias, setSugerencias] = useState<any[]>([]);
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
+
+  // Cargar lista de deudores cuando se abre el modal
+  useEffect(() => {
+    if (modalFiadoOpen) {
+      // Cargamos deudas tipo COBRAR para obtener nombres únicos
+      fetch('/api/deudas?tipo=COBRAR')
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            const unicos = new Map();
+            data.forEach((d: any) => {
+              // Guardamos nombre y teléfono del último registro encontrado
+              if (!unicos.has(d.persona.toLowerCase())) {
+                unicos.set(d.persona.toLowerCase(), { 
+                  persona: d.persona, 
+                  telefono: d.telefono 
+                });
+              }
+            });
+            setDeudoresExistentes(Array.from(unicos.values()));
+          }
+        })
+        .catch(err => console.error("Error cargando deudores", err));
+    }
+  }, [modalFiadoOpen]);
+
+  // Manejar cambio en el input de nombre
+  const handleNombreChange = (val: string) => {
+    setClienteNombre(val);
+    if (val.length > 1) {
+      const filtrados = deudoresExistentes.filter(d => 
+        d.persona.toLowerCase().includes(val.toLowerCase())
+      );
+      setSugerencias(filtrados);
+      setMostrarSugerencias(true);
+    } else {
+      setMostrarSugerencias(false);
+    }
+  };
+
+  // Seleccionar de la lista
+  const seleccionarCliente = (cliente: any) => {
+    setClienteNombre(cliente.persona);
+    setClienteTelefono(cliente.telefono || ""); // Autocompletar teléfono también
+    setMostrarSugerencias(false);
+  };
+
+  // --- SINCRONIZACIÓN DE PESOS ---
   useEffect(() => {
     const nextInputs: { [key: string]: string } = {};
     productosSeleccionados.forEach(p => {
       if (p.porPeso && p.peso !== undefined) {
-        // Mantenemos el valor actual si se está editando, sino actualizamos
-        if (!isEditing[p.id]) {
-            nextInputs[p.id] = p.peso.toString();
-        } else {
-            nextInputs[p.id] = pesoInputs[p.id] || p.peso.toString();
-        }
+        if (!isEditing[p.id]) nextInputs[p.id] = p.peso.toString();
+        else nextInputs[p.id] = pesoInputs[p.id] || p.peso.toString();
       }
     });
     setPesoInputs(nextInputs);
-  }, [productosSeleccionados, isEditing]); // Dependencias corregidas
+  }, [productosSeleccionados, isEditing]);
 
-  const handlePesoChange = (id: string, value: string) => {
-    setPesoInputs(prev => ({ ...prev, [id]: value }));
-  };
-
+  const handlePesoChange = (id: string, value: string) => setPesoInputs(prev => ({ ...prev, [id]: value }));
+  
   const handlePesoBlur = (id: string, value: string) => {
     setIsEditing(prev => ({ ...prev, [id]: false }));
+    let num = parseFloat(value.replace(',', '.'));
+    if (isNaN(num) || num <= 0) num = 0.001;
+    if (num > 100) num = 100;
+    const final = parseFloat(num.toFixed(3));
+    setPesoInputs(prev => ({ ...prev, [id]: final.toString() }));
+    actualizarPeso(id, final);
+  };
+
+  const getDisplayValue = (id: string) => pesoInputs[id] || '';
+
+  // --- GUARDAR FIADO ---
+  const handleFiar = async () => {
+    if (!clienteNombre.trim()) return toast.warning("Escribe el nombre del cliente");
     
-    let numValue = parseFloat(value.replace(',', '.'));
-    if (isNaN(numValue) || numValue <= 0) numValue = 0.001;
-    if (numValue > 100) numValue = 100; // Límite razonable
+    setGuardandoFiado(true);
+    try {
+      const itemsString = productosSeleccionados.map(p => {
+         const unid = p.porPeso ? "kg" : "unid";
+         const cant = p.porPeso ? p.peso : p.cantidad;
+         return `• ${cant} ${unid} x ${p.nombre} ($${p.precio})`;
+      }).join("\n");
+      
+      const descripcionFinal = clienteNota ? `${clienteNota}\n${itemsString}` : itemsString;
 
-    const finalVal = parseFloat(numValue.toFixed(3));
-    setPesoInputs(prev => ({ ...prev, [id]: finalVal.toString() }));
-    actualizarPeso(id, finalVal);
+      const payload = {
+        tipo: "COBRAR",         
+        persona: clienteNombre,
+        telefono: clienteTelefono,
+        descripcion: descripcionFinal,
+        monto: total,
+        productos: productosSeleccionados 
+      };
+
+      const res = await fetch("/api/deudas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        toast.success(`Cuenta actualizada para ${clienteNombre}`);
+        setModalFiadoOpen(false);
+        setClienteNombre("");
+        setClienteTelefono("");
+        setClienteNota("");
+        limpiarCarrito();
+      } else {
+        const error = await res.json();
+        toast.error(error.error || "Error al fiar");
+      }
+    } catch (e) { toast.error("Error de conexión"); }
+    finally { setGuardandoFiado(false); }
   };
-
-  const handlePesoFocus = (id: string) => {
-    setIsEditing(prev => ({ ...prev, [id]: true }));
-  };
-
-  const getDisplayValue = (id: string) => {
-      return pesoInputs[id] || '';
-  };
-
-  const metodoSeleccionado = metodosPago.find(m => m.id === metodoPagoId);
 
   return (
-    <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+    <>
+    <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 flex flex-col h-full relative">
+      
+      {/* HEADER */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
           <ShoppingCart className="w-6 h-6 text-blue-600" />
@@ -120,42 +217,27 @@ export default function CarritoVenta({
         </span>
       </div>
 
-      <div className="space-y-3 mb-6 max-h-96 overflow-y-auto pr-1">
+      {/* LISTA DE ITEMS */}
+      <div className="space-y-3 mb-6 max-h-96 overflow-y-auto pr-1 flex-1 custom-scrollbar">
         {productosSeleccionados.length === 0 ? (
-          <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-            <ShoppingCart className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+          <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200 h-full flex flex-col justify-center items-center">
+            <ShoppingCart className="w-10 h-10 text-gray-300 mb-2" />
             <p className="text-gray-500 text-sm">Tu carrito está vacío</p>
           </div>
         ) : (
           productosSeleccionados.map((p) => (
             <div key={p.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100 relative group">
-              <button
-                onClick={() => eliminarProducto(p.id)}
-                className="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors p-1"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-              
+              <button onClick={() => eliminarProducto(p.id)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500 p-1"><Trash2 className="w-4 h-4" /></button>
               <div className="pr-6">
                 <div className="flex items-center gap-2 mb-1">
-                   <h3 className="font-semibold text-gray-800 text-sm">{p.nombre}</h3>
-                   {p.porPeso && <span className="bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center gap-1"><Weight size={10}/> Kg</span>}
+                  <h3 className="font-semibold text-gray-800 text-sm">{p.nombre}</h3>
+                  {p.porPeso && <span className="bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center gap-1"><Weight size={10}/> Kg</span>}
                 </div>
-                
                 <div className="flex justify-between items-end">
                   {p.porPeso ? (
                     <div className="flex items-center gap-2">
-                       <input
-                        type="text"
-                        inputMode="decimal"
-                        value={getDisplayValue(p.id)}
-                        onChange={(e) => handlePesoChange(p.id, e.target.value)}
-                        onBlur={(e) => handlePesoBlur(p.id, e.target.value)}
-                        onFocus={() => handlePesoFocus(p.id)}
-                        className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-center font-mono"
-                        placeholder="0.000"
-                       />
-                       <span className="text-xs text-gray-500">kg</span>
+                      <input type="text" inputMode="decimal" value={getDisplayValue(p.id)} onChange={(e) => handlePesoChange(p.id, e.target.value)} onBlur={(e) => handlePesoBlur(p.id, e.target.value)} onFocus={() => setIsEditing(prev => ({ ...prev, [p.id]: true }))} className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-center font-mono" placeholder="0.000" />
+                      <span className="text-xs text-gray-500">kg</span>
                     </div>
                   ) : (
                     <div className="flex items-center bg-white border border-gray-200 rounded-lg">
@@ -164,10 +246,9 @@ export default function CarritoVenta({
                       <button onClick={() => incrementarCantidad(p.id)} className="px-2 py-1 text-gray-600 hover:bg-gray-100"><Plus size={14}/></button>
                     </div>
                   )}
-                  
                   <div className="text-right">
-                     <div className="font-bold text-gray-800">${p.subtotal.toFixed(2)}</div>
-                     <div className="text-[10px] text-gray-500">${p.precio.toFixed(2)} unit</div>
+                    <div className="font-bold text-gray-800">${p.subtotal.toFixed(2)}</div>
+                    <div className="text-[10px] text-gray-500">${p.precio.toFixed(2)} unit</div>
                   </div>
                 </div>
               </div>
@@ -176,47 +257,127 @@ export default function CarritoVenta({
         )}
       </div>
 
+      {/* TOTALES */}
       <div className="bg-gray-50 rounded-lg p-4 mb-6">
-          <div className="flex justify-between items-center mb-1">
-             <span className="text-gray-600 font-medium">Total USD</span>
-             <span className="text-xl font-bold text-blue-600">${total.toFixed(2)}</span>
+        <div className="flex justify-between items-center mb-1">
+          <span className="text-gray-600 font-medium">Total USD</span>
+          <span className="text-xl font-bold text-blue-600">${total.toFixed(2)}</span>
+        </div>
+        {tasaBCV && (
+          <div className="flex justify-between items-center text-sm border-t border-gray-200 pt-2 mt-2">
+            <span className="text-gray-500">Total Bs (Tasa: {tasaBCV.toFixed(2)})</span>
+            <span className="font-bold text-gray-700">Bs {(total * tasaBCV).toFixed(2)}</span>
           </div>
-          {tasaBCV && (
-            <div className="flex justify-between items-center text-sm border-t border-gray-200 pt-2 mt-2">
-               <span className="text-gray-500">Total Bs (Tasa: {tasaBCV.toFixed(2)})</span>
-               <span className="font-bold text-gray-700">Bs {(total * tasaBCV).toFixed(2)}</span>
-            </div>
-          )}
+        )}
       </div>
 
+      {/* MÉTODOS DE PAGO */}
       <div className="mb-6">
         <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Método de Pago</label>
         <div className="grid grid-cols-2 gap-2">
-           {metodosPago.map(m => (
-             <button
-               key={m.id}
-               onClick={() => setMetodoPagoId(m.id)}
-               className={`p-3 rounded-lg border text-sm font-medium flex flex-col items-center gap-2 transition-all ${
-                 metodoPagoId === m.id 
-                 ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm' 
-                 : 'border-gray-200 hover:border-blue-300 text-gray-600'
-               }`}
-             >
-                {getMetodoPagoIcon(m.nombre)}
-                {m.nombre}
-             </button>
-           ))}
+          {metodosPago.map(m => (
+            <button key={m.id} onClick={() => setMetodoPagoId(m.id)} className={`p-3 rounded-lg border text-sm font-medium flex flex-col items-center gap-2 transition-all ${metodoPagoId === m.id ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'border-gray-200 hover:border-blue-300 text-gray-600'}`}>
+              {getMetodoPagoIcon(m.nombre)} {m.nombre}
+            </button>
+          ))}
         </div>
       </div>
 
-      <button
-        onClick={registrarVenta}
-        disabled={cargando || productosSeleccionados.length === 0 || !metodoPagoId}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
-      >
-        {cargando ? <Loader2 className="animate-spin" /> : <CreditCard size={20}/>}
-        <span>Procesar Venta</span>
-      </button>
+      {/* BOTONES ACCIÓN */}
+      <div className="grid grid-cols-2 gap-3 mt-auto">
+        <button onClick={() => setModalFiadoOpen(true)} disabled={cargando || productosSeleccionados.length === 0} className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl font-bold text-gray-700 bg-white border-2 border-orange-100 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 transition-all disabled:opacity-50 active:scale-95">
+          <UserMinus size={20}/>
+          <span className="text-xs">Fiar / Crédito</span>
+        </button>
+        <button onClick={registrarVenta} disabled={cargando || productosSeleccionados.length === 0 || !metodoPagoId} className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95">
+          {cargando ? <Loader2 className="animate-spin w-5 h-5" /> : <CreditCard size={20}/>}
+          <span className="text-xs">Cobrar Ahora</span>
+        </button>
+      </div>
+
     </div>
+
+    {/* --- MODAL SIMPLE CON AUTOCOMPLETADO --- */}
+    {modalFiadoOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+        <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 animate-in zoom-in-95 border-t-4 border-orange-500" onClick={(e) => e.stopPropagation()}>
+          
+          <div className="flex justify-between items-center mb-6">
+             <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                <UserMinus className="text-orange-500"/> Fiar Pedido
+             </h3>
+             <button onClick={() => setModalFiadoOpen(false)}><X className="text-gray-400 hover:text-gray-600"/></button>
+          </div>
+
+          <div className="space-y-4 mb-6">
+             
+             {/* CAMPO CLIENTE CON SUGERENCIAS */}
+             <div className="relative">
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">Cliente *</label>
+                <div className="flex items-center gap-2 border rounded-xl px-3 py-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 relative">
+                   <User size={18} className="text-gray-400"/>
+                   <input 
+                      autoFocus 
+                      className="w-full outline-none font-bold text-gray-800" 
+                      placeholder="Buscar o escribir nombre..." 
+                      value={clienteNombre} 
+                      onChange={(e) => handleNombreChange(e.target.value)}
+                      onBlur={() => setTimeout(() => setMostrarSugerencias(false), 200)}
+                   />
+                </div>
+                
+                {/* LISTA DESPLEGABLE */}
+                {mostrarSugerencias && sugerencias.length > 0 && (
+                   <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto">
+                      <div className="px-3 py-2 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase">Clientes encontrados</div>
+                      {sugerencias.map((s, idx) => (
+                         <button 
+                            key={idx}
+                            onClick={() => seleccionarCliente(s)}
+                            className="w-full text-left px-4 py-2 hover:bg-orange-50 text-sm text-gray-700 font-medium flex justify-between items-center"
+                         >
+                            <span>{s.persona}</span>
+                            {s.telefono && <span className="text-xs text-gray-400">{s.telefono}</span>}
+                         </button>
+                      ))}
+                   </div>
+                )}
+             </div>
+
+             {/* CAMPO TELÉFONO */}
+             <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">Teléfono (Opcional)</label>
+                <div className="flex items-center gap-2 border rounded-xl px-3 py-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100">
+                   <Phone size={18} className="text-gray-400"/>
+                   <input 
+                       className="w-full outline-none font-medium text-gray-700 placeholder:font-normal" 
+                       placeholder="0412..." 
+                       value={clienteTelefono} 
+                       onChange={e => setClienteTelefono(e.target.value)} 
+                   />
+                </div>
+             </div>
+
+             {/* CAMPO NOTA */}
+             <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">Nota (Opcional)</label>
+                <div className="flex gap-2 border rounded-xl px-3 py-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100">
+                   <FileText size={18} className="text-gray-400 mt-0.5"/>
+                   <textarea className="w-full outline-none text-sm resize-none h-16 text-gray-700" placeholder="Detalles..." value={clienteNota} onChange={e => setClienteNota(e.target.value)} />
+                </div>
+             </div>
+          </div>
+
+          <div className="flex gap-3">
+             <button onClick={() => setModalFiadoOpen(false)} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200">Cancelar</button>
+             <button onClick={handleFiar} disabled={guardandoFiado || !clienteNombre} className="flex-[2] py-3 bg-orange-600 text-white font-bold rounded-xl shadow-lg hover:bg-orange-700 active:scale-95 disabled:opacity-70 flex justify-center items-center gap-2">
+                {guardandoFiado ? <Loader2 className="animate-spin"/> : "Confirmar Deuda"}
+             </button>
+          </div>
+
+        </div>
+      </div>
+    )}
+    </>
   );
 }

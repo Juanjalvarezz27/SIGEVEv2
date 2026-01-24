@@ -7,7 +7,7 @@ import ProductosDisponibles from '@/src/components/RegistroVentas/ProductosDispo
 import CarritoVenta from '@/src/components/RegistroVentas/CarritoVenta';
 import useTasaBCV from '@/src/app/hooks/useTasaBCV';
 
-// Types actualizados (IDs como string)
+// --- INTERFACES ---
 interface Producto {
   id: string;
   nombre: string;
@@ -35,6 +35,7 @@ interface PaginationData {
   hasPrevPage: boolean;
 }
 
+// --- UTILIDAD DEBOUNCE ---
 function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
@@ -56,16 +57,12 @@ export default function VentasPage() {
   const [cargandoProductos, setCargandoProductos] = useState(false);
 
   const [pagination, setPagination] = useState<PaginationData>({
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 1,
-    hasNextPage: false,
-    hasPrevPage: false,
+    page: 1, limit: 20, total: 0, totalPages: 1, hasNextPage: false, hasPrevPage: false,
   });
 
   const { tasa, loading: loadingTasa } = useTasaBCV();
 
+  // --- CARGA DE PRODUCTOS (Debounce) ---
   const cargarProductosRef = useRef(
     debounce(async (search: string, page: number) => {
       try {
@@ -84,7 +81,7 @@ export default function VentasPage() {
           setPagination(data.pagination);
         }
       } catch (error) {
-        console.error('Error cargando productos:', error);
+        console.error(error);
       } finally {
         setCargandoProductos(false);
       }
@@ -101,172 +98,103 @@ export default function VentasPage() {
 
   const cargarMetodosPago = async () => {
     try {
-      const response = await fetch('/api/metodos-pago');
-      const data = await response.json();
+      const res = await fetch('/api/metodos-pago');
+      const data = await res.json();
       setMetodosPago(data);
-    } catch (error) {
-      console.error('Error cargando métodos de pago:', error);
-    }
+    } catch (e) { console.error(e); }
   };
 
+  // --- MANEJO DEL CARRITO ---
   const agregarProducto = (producto: Producto) => {
-    const productoExistente = productosSeleccionados.find(p => p.id === producto.id);
-
-    if (productoExistente) {
-      setProductosSeleccionados(prev =>
-        prev.map(p =>
-          p.id === producto.id
-            ? {
-                ...p,
-                cantidad: producto.porPeso ? p.cantidad : p.cantidad + 1,
-                subtotal: producto.porPeso
-                  ? (p.peso || 0.001) * p.precio
-                  : (p.cantidad + 1) * p.precio
-              }
-            : p
-        )
-      );
+    const existe = productosSeleccionados.find(p => p.id === producto.id);
+    if (existe) {
+      setProductosSeleccionados(prev => prev.map(p => p.id === producto.id ? {
+        ...p,
+        cantidad: producto.porPeso ? p.cantidad : p.cantidad + 1,
+        subtotal: producto.porPeso ? (p.peso || 0.001) * p.precio : (p.cantidad + 1) * p.precio
+      } : p));
     } else {
-      setProductosSeleccionados(prev => [
-        ...prev,
-        {
-          ...producto,
-          cantidad: 1,
-          peso: producto.porPeso ? 1.000 : undefined, // Peso por defecto 1kg
-          subtotal: producto.porPeso
-            ? 1.000 * producto.precio
-            : producto.precio
-        }
-      ]);
+      setProductosSeleccionados(prev => [...prev, {
+        ...producto,
+        cantidad: 1,
+        peso: producto.porPeso ? 1.000 : undefined,
+        subtotal: producto.porPeso ? 1.000 * producto.precio : producto.precio
+      }]);
     }
-
-    toast.success(`${producto.nombre} agregado`, {
-      position: "bottom-right",
-      autoClose: 2000
-    });
+    toast.success(`${producto.nombre} agregado`, { position: "bottom-right", autoClose: 1000 });
   };
 
   const actualizarPeso = (id: string, nuevoPeso: number) => {
-    setProductosSeleccionados(prev =>
-      prev.map(producto =>
-        producto.id === id
-          ? {
-              ...producto,
-              peso: nuevoPeso,
-              subtotal: parseFloat((nuevoPeso * producto.precio).toFixed(2))
-            }
-          : producto
-      )
-    );
+    setProductosSeleccionados(prev => prev.map(p => p.id === id ? { ...p, peso: nuevoPeso, subtotal: nuevoPeso * p.precio } : p));
   };
 
   const incrementarCantidad = (id: string) => {
-    setProductosSeleccionados(prev =>
-      prev.map(producto =>
-        producto.id === id && !producto.porPeso
-          ? {
-              ...producto,
-              cantidad: producto.cantidad + 1,
-              subtotal: (producto.cantidad + 1) * producto.precio
-            }
-          : producto
-      )
-    );
+    setProductosSeleccionados(prev => prev.map(p => p.id === id && !p.porPeso ? { ...p, cantidad: p.cantidad + 1, subtotal: (p.cantidad + 1) * p.precio } : p));
   };
 
   const decrementarCantidad = (id: string) => {
-    setProductosSeleccionados(prev =>
-      prev.map(producto =>
-        producto.id === id && producto.cantidad > 1 && !producto.porPeso
-          ? {
-              ...producto,
-              cantidad: producto.cantidad - 1,
-              subtotal: (producto.cantidad - 1) * producto.precio
-            }
-          : producto
-      )
-    );
+    setProductosSeleccionados(prev => prev.map(p => p.id === id && p.cantidad > 1 && !p.porPeso ? { ...p, cantidad: p.cantidad - 1, subtotal: (p.cantidad - 1) * p.precio } : p));
   };
 
   const eliminarProducto = (id: string) => {
     setProductosSeleccionados(prev => prev.filter(p => p.id !== id));
   };
 
-  const calcularTotal = () => {
-    return productosSeleccionados.reduce((total, producto) => total + producto.subtotal, 0);
-  };
+  const calcularTotal = () => productosSeleccionados.reduce((acc, p) => acc + p.subtotal, 0);
 
-  const cambiarPagina = (nuevaPagina: number) => {
-    if (nuevaPagina >= 1 && nuevaPagina <= pagination.totalPages) {
-      setPagination(prev => ({ ...prev, page: nuevaPagina }));
-    }
-  };
-
-  const registrarVenta = async () => {
-    if (productosSeleccionados.length === 0) {
-      toast.error('Carrito vacío');
-      return;
-    }
-
-    if (!metodoPagoId) {
-      toast.error('Selecciona un método de pago');
-      return;
-    }
-
-    const total = calcularTotal();
-
-    try {
-      setCargando(true);
-
-      const productosParaVenta = productosSeleccionados.map(p => ({
-        id: p.id,
-        cantidad: p.porPeso ? 1 : p.cantidad,
-        peso: p.peso ? p.peso.toFixed(3) : null,
-        precioUnitario: p.precio
-      }));
-
-      const ventaData = {
-        productos: productosParaVenta,
-        metodoPagoId: metodoPagoId, // ID como string
-        total,
-        tasaBCV: tasa
-      };
-
-      const response = await fetch('/api/ventas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ventaData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success('¡Venta registrada!', { position: "top-center" });
-        setProductosSeleccionados([]);
-        setMetodoPagoId('');
-        setBusquedaProducto('');
-      } else {
-        toast.error(data.error || 'Error al registrar');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error de conexión');
-    } finally {
-      setCargando(false);
-    }
+  const cambiarPagina = (pag: number) => {
+    if (pag >= 1 && pag <= pagination.totalPages) setPagination(prev => ({ ...prev, page: pag }));
   };
 
   const limpiarBusqueda = () => setBusquedaProducto('');
 
+  // --- FUNCIÓN CLAVE: LIMPIAR TODO ---
+  const limpiarCarrito = () => {
+    setProductosSeleccionados([]);
+    setMetodoPagoId('');
+    setBusquedaProducto('');
+  };
+
+  // --- REGISTRAR VENTA NORMAL (COBRAR) ---
+  const registrarVenta = async () => {
+    if (productosSeleccionados.length === 0) return toast.error('Carrito vacío');
+    if (!metodoPagoId) return toast.error('Selecciona método de pago');
+
+    try {
+      setCargando(true);
+      const payload = {
+        productos: productosSeleccionados.map(p => ({
+          id: p.id,
+          cantidad: p.porPeso ? 1 : p.cantidad,
+          peso: p.peso ? p.peso.toFixed(3) : null,
+          precioUnitario: p.precio
+        })),
+        metodoPagoId,
+        total: calcularTotal(),
+        tasaBCV: tasa
+      };
+
+      const res = await fetch('/api/ventas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        toast.success('¡Venta registrada!');
+        limpiarCarrito();
+      } else {
+        toast.error(data.error || 'Error');
+      }
+    } catch (e) { toast.error('Error de conexión'); }
+    finally { setCargando(false); }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto min-h-screen">
-      <HeaderVentas
-        total={calcularTotal()}
-        productosCount={productosSeleccionados.length}
-        tasaBCV={tasa}
-        loadingTasa={loadingTasa}
-      />
-
+      <HeaderVentas total={calcularTotal()} productosCount={productosSeleccionados.length} tasaBCV={tasa} loadingTasa={loadingTasa} />
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <ProductosDisponibles
@@ -298,6 +226,7 @@ export default function VentasPage() {
               cargando={cargando}
               tasaBCV={tasa}
               loadingTasa={loadingTasa}
+              limpiarCarrito={limpiarCarrito} // Pasamos la función
             />
           </div>
         </div>
