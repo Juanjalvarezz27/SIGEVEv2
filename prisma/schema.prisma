@@ -28,6 +28,8 @@ model Comercio {
   ventas      Venta[]
   metodosPago MetodosPago[]
   deudas      Deuda[]
+  gastos      Gasto[]
+  cierres     CierreCaja[]
 }
 
 model Usuario {
@@ -127,5 +129,36 @@ model Deuda {
   comercioId  String
   comercio    Comercio @relation(fields: [comercioId], references: [id])
 
+  @@index([comercioId])
+}
+
+model Gasto {
+  id          String   @id @default(uuid())
+  descripcion String
+  monto       Float
+  fecha       DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')"))
+  
+  comercioId  String
+  comercio    Comercio @relation(fields: [comercioId], references: [id])
+
+  @@index([comercioId])
+}
+
+model CierreCaja {
+  id            String   @id @default(uuid())
+  fecha         DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')"))
+  
+  totalVentas   Float    
+  totalGastos   Float    
+  totalSistema  Float   
+  totalReal     Float    
+  diferencia    Float    
+  
+  detalles      Json?    
+  notas         String?
+
+  comercioId    String
+  comercio      Comercio @relation(fields: [comercioId], references: [id])
+  
   @@index([comercioId])
 }

@@ -75,21 +75,24 @@ export default function DeudasPage() {
     } catch (e) { toast.error("Error al guardar"); }
   };
 
-    const handleAbonarConfirm = async (monto: number, metodoId: string) => { 
-        try {
-          const res = await fetch("/api/deudas", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                id: deudaSeleccionada.id, 
-                abono: monto,
-                metodoPagoId: metodoId 
-            })
-          });
-          if (res.ok) toast.success("Abono registrado");
-          cargarDeudas();
-        } catch (e) { toast.error("Error en abono"); }
-      };
+  // --- AQUI ESTA EL CAMBIO PRINCIPAL ---
+  // Ahora recibimos 'crearGasto' desde el Modal y lo pasamos al API
+  const handleAbonarConfirm = async (monto: number, metodoId: string, crearGasto: boolean) => { 
+    try {
+      const res = await fetch("/api/deudas", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+            id: deudaSeleccionada.id, 
+            abono: monto,
+            metodoPagoId: metodoId,
+            crearGasto: crearGasto // <--- ENVIAMOS LA SEÑAL AL BACKEND
+        })
+      });
+      if (res.ok) toast.success("Abono registrado");
+      cargarDeudas();
+    } catch (e) { toast.error("Error en abono"); }
+  };
 
   const deudasFiltradas = deudas
     .filter(d => d.tipo === tab)
@@ -149,7 +152,7 @@ export default function DeudasPage() {
         </div>
       </div>
 
-      {/* GRID DEUDAS (CAMBIO AQUI: md:grid-cols-2) */}
+      {/* GRID DEUDAS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {loading ? <p className="text-center col-span-full py-10 text-gray-400">Cargando...</p> :
           deudasFiltradas.length === 0 ? (
@@ -186,6 +189,7 @@ export default function DeudasPage() {
           onConfirm={handleAbonarConfirm}
           deudaTotal={deudaSeleccionada.monto}
           abonado={deudaSeleccionada.abonado}
+          tipo={deudaSeleccionada.tipo} // <--- PASAMOS EL TIPO AQUI
         />
       )}
 

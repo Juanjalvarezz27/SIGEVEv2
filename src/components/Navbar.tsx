@@ -13,7 +13,8 @@ import {
   BanknoteArrowDown, 
   LogIn,
   Boxes,
-  PhoneCall 
+  PhoneCall,
+  CircleDollarSign  
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { NavbarProps, UserSession } from "../types/login";
@@ -27,7 +28,7 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
   const user = (session?.user as UserSession) || initialUser;
 
   // TAMAÑO COMPACTO (18px)
-  const iconSize = 18;
+  const iconSize = 16;
 
   const navItems = [
     { name: "Dashboard", href: "/home", icon: <Package size={iconSize} /> },
@@ -36,6 +37,7 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
     { name: "Estadísticas", href: "/home/estadisticas", icon: <BarChart3 size={iconSize} /> },
     { name: "Deudas", href: "/home/deudas", icon: <BanknoteArrowDown size={iconSize} /> },
     { name: "Configuración", href: "/home/configuracion", icon: <Settings size={iconSize} /> },
+    { name: "Caja", href: "/home/caja", icon: <CircleDollarSign   size={iconSize} /> },
   ];
 
   return (
@@ -66,7 +68,7 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
                       key={item.name}
                       href={item.href}
                       className={`
-                        flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap
+                        flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap
                         ${isActive
                           ? "bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-100"
                           : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
