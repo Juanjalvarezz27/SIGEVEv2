@@ -81,7 +81,7 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
                       <span className={`${isActive ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600"}`}>
                         {item.icon}
                       </span>
-                      {/* Texto oculto en laptops pequeñas, visible en monitores grandes (xl) */}
+                      {/* Texto oculto en laptops pequeñas, visible en monitores grandes */}
                       <span className="ml-2 hidden xl:inline-block">{item.name}</span>
                     </Link>
                   );
