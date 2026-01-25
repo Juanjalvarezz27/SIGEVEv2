@@ -53,6 +53,7 @@ model Producto {
   nombre    String
   precio    Float
   porPeso   Boolean?
+  stock       Float    @default(0) 
   
   comercioId String
   comercio   Comercio @relation(fields: [comercioId], references: [id])

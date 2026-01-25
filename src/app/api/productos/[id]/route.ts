@@ -6,21 +6,19 @@ interface Params {
   params: Promise<{ id: string }>;
 }
 
-// PUT: Actualizar
 export async function PUT(request: Request, { params }: Params) {
   try {
     const session = await auth();
     if (!session?.user?.comercioId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-    const { id } = await params; // ID es String (UUID)
+    const { id } = await params;
     const body = await request.json();
-    const { nombre, precio, porPeso } = body;
+    const { nombre, precio, porPeso, stock } = body; // <--- RECIBIMOS STOCK
 
-    // Verificar que el producto existe Y pertenece al comercio del usuario
     const productoExistente = await prisma.producto.findFirst({
-      where: { 
+      where: {
         id: id,
-        comercioId: session.user.comercioId // <--- Seguridad
+        comercioId: session.user.comercioId
       },
     });
 
@@ -28,7 +26,6 @@ export async function PUT(request: Request, { params }: Params) {
       return NextResponse.json({ error: 'Producto no encontrado o acceso denegado' }, { status: 404 });
     }
 
-    // Verificar nombre duplicado (excluyendo el actual)
     const duplicado = await prisma.producto.findFirst({
       where: {
         comercioId: session.user.comercioId,
@@ -47,6 +44,7 @@ export async function PUT(request: Request, { params }: Params) {
         nombre: nombre.trim(),
         precio: parseFloat(precio),
         porPeso: porPeso ? true : null,
+        stock: parseFloat(stock) || 0, // <--- ACTUALIZAMOS STOCK
       },
     });
 
@@ -57,7 +55,6 @@ export async function PUT(request: Request, { params }: Params) {
   }
 }
 
-// DELETE: Eliminar
 export async function DELETE(request: Request, { params }: Params) {
   try {
     const session = await auth();
@@ -65,14 +62,12 @@ export async function DELETE(request: Request, { params }: Params) {
 
     const { id } = await params;
 
-    // Verificar propiedad
     const producto = await prisma.producto.findFirst({
       where: { id: id, comercioId: session.user.comercioId }
     });
 
     if (!producto) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
 
-    // Verificar si hay ventas asociadas
     const ventas = await prisma.ventaProducto.findFirst({
       where: { productoId: id }
     });

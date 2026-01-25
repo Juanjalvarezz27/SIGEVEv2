@@ -13,6 +13,7 @@ interface Producto {
   nombre: string;
   precio: number;
   porPeso?: boolean | null;
+  stock: number;
 }
 
 interface MetodoPago {
@@ -70,6 +71,7 @@ export default function VentasPage() {
         const queryParams = new URLSearchParams({
           page: page.toString(),
           limit: pagination.limit.toString(),
+          soloDisponibles: 'true', // Filtramos stock > 0
           ...(search && { search }),
         });
 
@@ -107,6 +109,16 @@ export default function VentasPage() {
   // --- MANEJO DEL CARRITO ---
   const agregarProducto = (producto: Producto) => {
     const existe = productosSeleccionados.find(p => p.id === producto.id);
+    
+    // Validación de stock antes de agregar
+    if (!producto.porPeso) {
+        const cantidadActual = existe ? existe.cantidad : 0;
+        if (cantidadActual + 1 > producto.stock) {
+            toast.warning(`Stock límite: ${producto.stock} unidades`);
+            return;
+        }
+    }
+
     if (existe) {
       setProductosSeleccionados(prev => prev.map(p => p.id === producto.id ? {
         ...p,
@@ -124,12 +136,44 @@ export default function VentasPage() {
     toast.success(`${producto.nombre} agregado`, { position: "bottom-right", autoClose: 1000 });
   };
 
-  const actualizarPeso = (id: string, nuevoPeso: number) => {
-    setProductosSeleccionados(prev => prev.map(p => p.id === id ? { ...p, peso: nuevoPeso, subtotal: nuevoPeso * p.precio } : p));
+  // CORRECCIÓN REACT: Validación fuera del setState
+  const incrementarCantidad = (id: string) => {
+    // 1. Buscamos el producto en el estado actual
+    const producto = productosSeleccionados.find(p => p.id === id);
+    if (!producto) return;
+
+    // 2. Validamos
+    if (!producto.porPeso) {
+        if (producto.cantidad + 1 > producto.stock) {
+            toast.warning(`No puedes agregar más de ${producto.stock}`);
+            return; // Detenemos aquí, no actualizamos estado
+        }
+    }
+
+    // 3. Actualizamos estado (seguro)
+    setProductosSeleccionados(prev => prev.map(p => 
+        p.id === id 
+        ? { ...p, cantidad: p.cantidad + 1, subtotal: (p.cantidad + 1) * p.precio } 
+        : p
+    ));
   };
 
-  const incrementarCantidad = (id: string) => {
-    setProductosSeleccionados(prev => prev.map(p => p.id === id && !p.porPeso ? { ...p, cantidad: p.cantidad + 1, subtotal: (p.cantidad + 1) * p.precio } : p));
+  // CORRECCIÓN REACT: Validación fuera del setState
+  const actualizarPeso = (id: string, nuevoPeso: number) => {
+    const producto = productosSeleccionados.find(p => p.id === id);
+    if (!producto) return;
+
+    if (nuevoPeso > producto.stock) {
+        toast.warning(`Stock insuficiente (${producto.stock}kg)`);
+        // Opcional: Podrías retornar aquí si quieres bloquear estrictamente
+        // return; 
+    }
+
+    setProductosSeleccionados(prev => prev.map(p => 
+        p.id === id 
+        ? { ...p, peso: nuevoPeso, subtotal: nuevoPeso * p.precio } 
+        : p
+    ));
   };
 
   const decrementarCantidad = (id: string) => {
@@ -148,7 +192,6 @@ export default function VentasPage() {
 
   const limpiarBusqueda = () => setBusquedaProducto('');
 
-  // --- FUNCIÓN CLAVE: LIMPIAR TODO ---
   const limpiarCarrito = () => {
     setProductosSeleccionados([]);
     setMetodoPagoId('');
@@ -159,6 +202,15 @@ export default function VentasPage() {
   const registrarVenta = async () => {
     if (productosSeleccionados.length === 0) return toast.error('Carrito vacío');
     if (!metodoPagoId) return toast.error('Selecciona método de pago');
+
+    // Validación final de seguridad
+    for (const p of productosSeleccionados) {
+        const cantidadLlevada = p.porPeso && p.peso ? p.peso : p.cantidad;
+        if (cantidadLlevada > p.stock) {
+            toast.error(`Stock insuficiente para ${p.nombre}. Disponible: ${p.stock}`);
+            return;
+        }
+    }
 
     try {
       setCargando(true);
@@ -184,6 +236,8 @@ export default function VentasPage() {
       if (res.ok) {
         toast.success('¡Venta registrada!');
         limpiarCarrito();
+        // Recargar productos para actualizar stock visualmente
+        cargarProductosRef.current(busquedaProducto, pagination.page);
       } else {
         toast.error(data.error || 'Error');
       }
@@ -226,7 +280,7 @@ export default function VentasPage() {
               cargando={cargando}
               tasaBCV={tasa}
               loadingTasa={loadingTasa}
-              limpiarCarrito={limpiarCarrito} // Pasamos la función
+              limpiarCarrito={limpiarCarrito}
             />
           </div>
         </div>

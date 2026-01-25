@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/src/lib/prisma';
 import { Prisma } from '@prisma/client';
-import { auth } from '@/src/auth'; 
+import { auth } from '@/src/auth';
 
 export async function GET(request: Request) {
   try {
-    // 1. SEGURIDAD: Verificar sesión
     const session = await auth();
     if (!session?.user?.comercioId) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
@@ -13,13 +12,18 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '30'); // Ajusté a 30 por defecto
+    const limit = parseInt(searchParams.get('limit') || '30');
     const search = searchParams.get('search') || '';
+    
+    // LOGICA STOCK: Verificar si piden solo disponibles
+    const soloDisponibles = searchParams.get('soloDisponibles') === 'true';
+
     const skip = (page - 1) * limit;
 
-    // 2. FILTRADO: Solo productos de ESTE comercio
     const where: Prisma.ProductoWhereInput = {
       comercioId: session.user.comercioId,
+      // SI soloDisponibles es true, filtramos stock mayor a 0
+      ...(soloDisponibles ? { stock: { gt: 0 } } : {}),
       ...(search ? {
         OR: [
           {
@@ -32,7 +36,6 @@ export async function GET(request: Request) {
       } : {})
     };
 
-    // Obtener productos y total
     const [productos, total] = await Promise.all([
       prisma.producto.findMany({
         where,
@@ -40,10 +43,11 @@ export async function GET(request: Request) {
         skip,
         take: limit,
         select: {
-          id: true, 
+          id: true,
           nombre: true,
           precio: true,
           porPeso: true,
+          stock: true, // <--- PEDIR EL STOCK
         },
       }),
       prisma.producto.count({ where }),

@@ -17,33 +17,38 @@ export async function POST(request: Request) {
 
     const totalBs = total * (tasaBCV || 0);
 
-    // Transacción para asegurar consistencia
     const venta = await prisma.$transaction(async (tx) => {
       const nuevaVenta = await tx.venta.create({
         data: {
           total,
           totalBs,
           tasaBCV: tasaBCV || 0,
-          metodoPagoId: metodoPagoId, // ID string
+          metodoPagoId: metodoPagoId,
           comercioId: session.user.comercioId!,
-          fechaHora: new Date(), 
+          fechaHora: new Date(),
         },
       });
 
-      const itemsVenta = productos.map((p: any) => ({
-        ventaId: nuevaVenta.id,
-        productoId: p.id,
-        cantidad: p.cantidad,
-        peso: p.peso ? p.peso.toString() : null,
-        
-        // --- CORRECCIÓN AQUÍ ---
-        precioUnitario: p.precioUnitario, 
-        
-        // Esto estaba bien, por eso sí calculaba los Bs
-        precioUnitarioBs: p.precioUnitario * (tasaBCV || 0),
-      }));
+      // Procesar productos y restar stock
+      for (const p of productos) {
+        await tx.ventaProducto.create({
+            data: {
+                ventaId: nuevaVenta.id,
+                productoId: p.id,
+                cantidad: p.cantidad,
+                peso: p.peso ? p.peso.toString() : null,
+                precioUnitario: p.precioUnitario,
+                precioUnitarioBs: p.precioUnitario * (tasaBCV || 0),
+            }
+        });
 
-      await tx.ventaProducto.createMany({ data: itemsVenta });
+        // RESTAR STOCK
+        const cantidadARestar = p.peso ? parseFloat(p.peso) : p.cantidad;
+        await tx.producto.update({
+            where: { id: p.id },
+            data: { stock: { decrement: cantidadARestar } }
+        });
+      }
 
       return nuevaVenta;
     });

@@ -4,21 +4,18 @@ import { auth } from '@/src/auth';
 
 export async function POST(request: Request) {
   try {
-    // 1. SEGURIDAD
     const session = await auth();
     if (!session?.user?.comercioId) {
       return NextResponse.json({ error: 'No autorizado o sin comercio' }, { status: 401 });
     }
 
     const body = await request.json();
-    const { nombre, precio, porPeso } = body;
+    const { nombre, precio, porPeso, stock } = body; // <--- RECIBIMOS STOCK
 
-    // Validaciones básicas
     if (!nombre || precio === undefined) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
     }
 
-    // Validar nombre duplicado SOLO en este comercio
     const productoExistente = await prisma.producto.findFirst({
       where: {
         comercioId: session.user.comercioId,
@@ -36,13 +33,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Crear producto asignado al comercio
     const nuevoProducto = await prisma.producto.create({
       data: {
         nombre: nombre.trim(),
-        precio: parseFloat(precio), // Asegurar número
+        precio: parseFloat(precio),
         porPeso: porPeso ? true : null,
-        comercioId: session.user.comercioId, // <--- VINCULACIÓN IMPORTANTE
+        stock: parseFloat(stock) || 0, // <--- GUARDAMOS STOCK
+        comercioId: session.user.comercioId,
       },
     });
 
