@@ -1,15 +1,12 @@
 import { auth } from "@/src/auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+// Importamos el nuevo componente cliente
+import ContactButtons from "@/src/components/Landing/ContactButtons"; 
 import { 
   BarChart3, 
   Box, 
   ShieldCheck, 
-  Zap, 
-  Tags,      
-  CreditCard,
-  Mail,       
-  MessageCircle, 
   CheckCircle2, 
   ArrowRight,
   Store,
@@ -28,33 +25,33 @@ export default async function Home() {
   // CARACTERÍSTICAS
   const features = [
     {
-      title: "Estadísticas diarias y por periodos",
-      description: "Visualiza el rendimiento de tu negocio. Gráficas claras de ventas por día, rangos de fecha y totales en Divisas/Bolívares.",
-      icon: <BarChart3 className="w-6 h-6 text-white" />,
-    },
-    {
-      title: "Notas de Entrega por WhatsApp",
-      description: "Olvídate del papel. Envía Notas de Entrega digitales directamente al WhatsApp de tu cliente con un clic.",
-      icon: <Smartphone className="w-6 h-6 text-white" />,
-    },
-    {
-      title: "Gestión de Deuda",
-      description: "Controla quién te debe. Sistema completo de cuentas por cobrar con abonos parciales e historial.",
-      icon: <Banknote className="w-6 h-6 text-white" />, 
-    },
-    {
-      title: "Inventario Inteligente",
-      description: "Evita robos y quiebres de stock. Control detallado de entradas, salidas y alertas de bajo inventario.",
+      title: "Control de Stock Real",
+      description: "Inventario a prueba de errores. El sistema descuenta existencias automáticamente al vender, bloquea ventas sin stock y alerta cuando queda poco producto.",
       icon: <Box className="w-6 h-6 text-white" />,
     },
     {
-      title: "Punto de Venta Ágil",
-      description: "Vende en segundos. Tasa BCV automática, cálculo en dos monedas y descuento de inventario en tiempo real.",
+      title: "Sistema de Fiados",
+      description: "Gestiona las cuentas por cobrar. Registra deudas desde el POS, controla abonos, historial de pagos y totaliza lo que te deben tus clientes.",
+      icon: <Banknote className="w-6 h-6 text-white" />, 
+    },
+    {
+      title: "Precios Inteligentes $/Bs",
+      description: "Olvídate de la calculadora. Define precios en Dólares o Bolívares y el sistema hace la conversión bidireccional automática con la tasa del día.",
       icon: <Calculator className="w-6 h-6 text-white" />, 
     },
     {
+      title: "Estadísticas y Reportes",
+      description: "Visualiza el rendimiento de tu negocio. Gráficas claras de ventas diarias, ingresos totales y desglose exacto de Dólares vs. Bolívares.",
+      icon: <BarChart3 className="w-6 h-6 text-white" />,
+    },
+    {
+      title: "Notas de Entrega Digitales",
+      description: "Moderniza tu comercio. Envía comprobantes de venta o estados de cuenta de deuda directamente al WhatsApp de tu cliente con un clic.",
+      icon: <Smartphone className="w-6 h-6 text-white" />,
+    },
+    {
       title: "Seguridad y Roles",
-      description: "Duerme tranquilo. Accesos restringidos para vendedores y respaldos automáticos de tu data en la nube.",
+      description: "Tu información blindada. Accesos restringidos para vendedores y respaldos automáticos de tu data en la nube.",
       icon: <ShieldCheck className="w-6 h-6 text-white" />,
     },
   ];
@@ -79,10 +76,7 @@ export default async function Home() {
       {/* === HERO SECTION === */}
       <section className="relative flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-6 min-h-[90vh] border-b border-gray-100 overflow-hidden">
         
-        {/* --- NUEVO: FONDO DE PUNTOS --- */}
         <div className="absolute top-0 left-0 w-full h-full opacity-30 bg-[radial-gradient(#6366f1_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none"></div>
-
-        {/* Mancha de color decorativa (Blur) */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-200/20 rounded-full blur-[100px] pointer-events-none"></div>
 
         <div className="text-center max-w-5xl z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 pt-10">
@@ -103,7 +97,7 @@ export default async function Home() {
           </h1>
           
           <p className="text-xl md:text-2xl text-gray-500 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
-            El sistema SaaS completo: Ventas, Inventario, Deudas y Reportes en un solo lugar.
+            El sistema SaaS completo: Ventas rápidas, Control de Stock real, Deudas y Reportes en un solo lugar.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -148,7 +142,7 @@ export default async function Home() {
               Todo lo que puedes hacer
             </h2>
             <p className="text-xl text-gray-500 max-w-3xl mx-auto">
-              Hemos simplificado las herramientas potentes para que tú solo te encargues de vender.
+              Hemos simplificado las herramientas complejas para que tú solo te encargues de vender y cobrar.
             </p>
           </div>
 
@@ -158,13 +152,10 @@ export default async function Home() {
                 key={index} 
                 className="group relative p-8 bg-white rounded-3xl border border-gray-100 hover:border-indigo-100 shadow-sm hover:shadow-2xl hover:shadow-indigo-100/50 transition-all duration-300 overflow-hidden"
               >
-                {/* Elemento decorativo hover */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-[100px] -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
-                
                 <div className="relative w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-200 group-hover:rotate-6 transition-transform">
                   {feature.icon}
                 </div>
-                
                 <h3 className="relative text-xl font-bold text-gray-900 mb-3 group-hover:text-indigo-700 transition-colors">
                   {feature.title}
                 </h3>
@@ -184,16 +175,16 @@ export default async function Home() {
              <div className="inline-block px-4 py-1 mb-4 rounded-full bg-green-100 text-green-700 font-bold text-xs uppercase">
                ¿Por qué elegirnos?
              </div>
-             <h2 className="text-4xl font-bold text-gray-900 mb-6">Deja de perder dinero por desorden administrativo</h2>
+             <h2 className="text-4xl font-bold text-gray-900 mb-6">Deja de perder dinero en mercancía perdida</h2>
              <p className="text-lg text-gray-600 mb-8">
-               Nuestro sistema está diseñado específicamente para el mercado local, entendiendo los retos de la multimoneda y el inventario dinámico.
+               Nuestro sistema está diseñado para el comercio real: maneja múltiples monedas, controla los fiados y evita que vendas lo que no tienes en almacén.
              </p>
              
              <ul className="space-y-4">
                {[
-                 "Diseñado exclusivamente para uso en Computadoras",
-                 "Actualizaciones frecuentes y mejoras constantes",
-                 "Planes flexibles: Mensuales o Trimestrales",
+                 "Control de Stock con alertas de existencia",
+                 "Cálculo automático de precios (Tasa BCV/Paralelo)",
+                 "Historial de deudas y abonos por cliente",
                  "Soporte técnico directo vía WhatsApp"
                ].map((item, i) => (
                  <li key={i} className="flex items-center gap-3">
@@ -228,27 +219,8 @@ export default async function Home() {
             Únete a los comercios que ya están ahorrando tiempo y dinero con nuestra plataforma.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-            <a 
-              href="https://wa.me/584129164371" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col items-center p-8 bg-white/5 backdrop-blur-sm rounded-3xl border border-white/10 hover:bg-green-600 hover:border-green-500 transition-all duration-300 cursor-pointer"
-            >
-              <MessageCircle className="w-10 h-10 text-green-400 group-hover:text-white mb-4 transition-colors" />
-              <h3 className="text-xl font-bold text-white mb-1">WhatsApp Directo</h3>
-              <p className="text-gray-400 group-hover:text-white/90 text-sm">Respuesta inmediata</p>
-            </a>
-
-            <a 
-              href="mailto:jjsalvarezz@gmail.com" 
-              className="group flex flex-col items-center p-8 bg-white/5 backdrop-blur-sm rounded-3xl border border-white/10 hover:bg-indigo-600 hover:border-indigo-500 transition-all duration-300 cursor-pointer"
-            >
-              <Mail className="w-10 h-10 text-indigo-400 group-hover:text-white mb-4 transition-colors" />
-              <h3 className="text-xl font-bold text-white mb-1">Correo Electrónico</h3>
-              <p className="text-gray-400 group-hover:text-white/90 text-sm">Soporte y Ventas</p>
-            </a>
-          </div>
+          {/* AQUÍ INTEGRADO EL COMPONENTE DE CLIENTE */}
+          <ContactButtons />
 
           <div className="mt-16 pt-8 border-t border-white/10 flex flex-col items-center">
              <div className="text-sm text-gray-500 mb-2">Desarrollado por Juan Álvarez</div>
