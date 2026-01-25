@@ -45,7 +45,6 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
   // --- MENÚ PARA TI (SUPER_ADMIN) ---
   const adminNavItems = [
     { name: "Admin Panel", href: "/admin", icon: <ShieldAlert size={iconSize} /> },
-    { name: "Comercios", href: "/admin/comercios", icon: <Store size={iconSize} /> },
     { name: "Usuarios", href: "/admin/usuarios", icon: <Users size={iconSize} /> },
     { name: "Configuración", href: "/admin/config", icon: <Settings size={iconSize} /> },
   ];

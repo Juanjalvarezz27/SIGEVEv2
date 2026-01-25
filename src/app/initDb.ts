@@ -1,14 +1,14 @@
 import prisma from "@/src/lib/prisma";
 import { seedRoles } from "./seeds/roles";
-import { seedComercios } from "./seeds/comercios";
-import { seedUsuarios } from "./seeds/usuarios"; 
+import { seedUsuarios } from "./seeds/usuarios";
+
 export async function def() {
   try {
-    console.log("Iniciando población de Base de Datos Multi-Tenant...");
+    console.log("Iniciando inicialización de Base de Datos...");
+
 
     await seedRoles();
-    await seedComercios();
-    await seedUsuarios(); 
+    await seedUsuarios();
 
     console.log("Inicialización completada exitosamente.");
   } catch (error) {

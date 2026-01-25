@@ -7,93 +7,115 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// AUTENTICACIÓN Y MULTI-TENANCY
-// --------------------------------------
 
 model Rol {
-  id          String    @id @default(uuid())
-  nombre      String    @unique 
-  usuarios    Usuario[]
+  id       String    @id @default(uuid())
+  nombre   String    @unique 
+  usuarios Usuario[]
+}
+
+enum EstadoComercio {
+  ACTIVO      
+  SUSPENDIDO  
+  CANCELADO   
 }
 
 model Comercio {
-  id          String   @id @default(uuid())
-  nombre      String
-  slug        String   @unique
-  activo      Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  slug      String   @unique 
+  createdAt DateTime @default(now())
   
-  usuarios    Usuario[]
-  productos   Producto[]
-  ventas      Venta[]
-  metodosPago MetodosPago[]
-  deudas      Deuda[]
-  gastos      Gasto[]
-  cierres     CierreCaja[]
+  nombre    String   
+  direccion String?  
+  logoUrl   String?  
+
+  nombreContacto String? 
+  telefono       String? 
+  emailContacto  String?
+
+  estado           EstadoComercio @default(ACTIVO)
+  plan             String         @default("BASICO") 
+  fechaVencimiento DateTime?   
+  ultimoPago       DateTime?    
+
+  usuarios      Usuario[]
+  productos     Producto[]
+  ventas        Venta[]
+  metodosPago   MetodosPago[]
+  deudas        Deuda[]
+  gastos        Gasto[]
+  cierres       CierreCaja[]
+  historialPagos PagoSuscripcion[] 
+}
+
+model PagoSuscripcion {
+  id          String   @id @default(uuid())
+  fecha       DateTime @default(now())
+  monto       Float
+  metodo      String 
+  referencia  String?
+  nota        String?  
+  
+  comercioId  String
+  comercio    Comercio @relation(fields: [comercioId], references: [id])
 }
 
 model Usuario {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  password    String
-  nombre      String
-  
-  rolId       String
-  rol         Rol      @relation(fields: [rolId], references: [id])
-  
-  comercioId  String?  
-  comercio    Comercio? @relation(fields: [comercioId], references: [id])
+  id         String  @id @default(uuid())
+  email      String  @unique
+  password   String
+  nombre     String
+
+  rolId      String
+  rol        Rol     @relation(fields: [rolId], references: [id])
+
+  comercioId String?
+  comercio   Comercio? @relation(fields: [comercioId], references: [id])
 }
 
-// LÓGICA DE NEGOCIO (POR COMERCIO)
-// --------------------------------------
-
 model Producto {
-  id        String  @id @default(uuid())
-  nombre    String
-  precio    Float
-  porPeso   Boolean?
-  stock       Float    @default(0) 
-  
-  comercioId String
-  comercio   Comercio @relation(fields: [comercioId], references: [id])
-  
-  ventas    VentaProducto[]
+  id          String   @id @default(uuid())
+  nombre      String
+  precio      Float
+  porPeso     Boolean?
+  stock       Float    @default(0)
+
+  comercioId  String
+  comercio    Comercio @relation(fields: [comercioId], references: [id])
+  ventas      VentaProducto[]
 
   @@index([comercioId])
 }
 
 model Venta {
-  id        String   @id @default(uuid())
-  total     Float
-  totalBs   Float
-  tasaBCV   Float
-  fechaHora DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')"))
-  
+  id           String   @id @default(uuid())
+  total        Float
+  totalBs      Float
+  tasaBCV      Float
+  fechaHora    DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')"))
+
   metodoPagoId String
   metodoPago   MetodosPago @relation(fields: [metodoPagoId], references: [id])
-  
+
   comercioId   String
   comercio     Comercio @relation(fields: [comercioId], references: [id])
-  
+
   productos    VentaProducto[]
-  
-  deudaId      String?  @unique
-  deuda        Deuda?   @relation(fields: [deudaId], references: [id], onDelete: Cascade)
+  deudaId      String? @unique
+  deuda        Deuda?  @relation(fields: [deudaId], references: [id], onDelete: Cascade)
 
   @@index([comercioId])
 }
 
 model VentaProducto {
-  id               String  @id @default(uuid())
+  id               String @id @default(uuid())
   cantidad         Int
   peso             String?
   precioUnitario   Float
   precioUnitarioBs Float
-  
+
   ventaId    String
   venta      Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
-  
   productoId String
   producto   Producto @relation(fields: [productoId], references: [id])
 
@@ -101,32 +123,29 @@ model VentaProducto {
 }
 
 model MetodosPago {
-  id     String @id @default(uuid())
-  nombre String
-  
+  id         String   @id @default(uuid())
+  nombre     String
   comercioId String
   comercio   Comercio @relation(fields: [comercioId], references: [id])
-  
-  ventas Venta[]
+  ventas     Venta[]
 
   @@index([comercioId])
 }
 
 model Deuda {
   id          String   @id @default(uuid())
-  tipo        String   // "COBRAR" | "PAGAR"
+  tipo        String // "COBRAR" | "PAGAR"
   persona     String
-  descripcion String?  
-  detalles    Json?    
+  descripcion String?
+  detalles    Json?
   monto       Float
   abonado     Float    @default(0)
   estado      String   @default("PENDIENTE")
-  fecha       DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')")) 
-
-  telefono    String?  
-  fechaPago   DateTime? 
-  venta       Venta?
+  fecha       DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')"))
+  telefono    String?
+  fechaPago   DateTime?
   
+  venta       Venta?
   comercioId  String
   comercio    Comercio @relation(fields: [comercioId], references: [id])
 
@@ -138,7 +157,7 @@ model Gasto {
   descripcion String
   monto       Float
   fecha       DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')"))
-  
+
   comercioId  String
   comercio    Comercio @relation(fields: [comercioId], references: [id])
 
@@ -146,20 +165,18 @@ model Gasto {
 }
 
 model CierreCaja {
-  id            String   @id @default(uuid())
-  fecha         DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')"))
-  
-  totalVentas   Float    
-  totalGastos   Float    
-  totalSistema  Float   
-  totalReal     Float    
-  diferencia    Float    
-  
-  detalles      Json?    
-  notas         String?
+  id           String   @id @default(uuid())
+  fecha        DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')"))
+  totalVentas  Float
+  totalGastos  Float
+  totalSistema Float
+  totalReal    Float
+  diferencia   Float
+  detalles     Json?
+  notas        String?
 
-  comercioId    String
-  comercio      Comercio @relation(fields: [comercioId], references: [id])
-  
+  comercioId   String
+  comercio     Comercio @relation(fields: [comercioId], references: [id])
+
   @@index([comercioId])
 }
