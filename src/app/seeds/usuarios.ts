@@ -4,13 +4,12 @@ import bcrypt from "bcryptjs";
 export async function seedUsuarios() {
   console.log("Verificando Usuarios...");
 
-  // 1. Buscamos el ID del Rol "ADMIN_COMERCIO" (para dárselo a los dueños)
-  const rolComercio = await prisma.rol.findUnique({
-    where: { nombre: "ADMIN_COMERCIO" },
-  });
+  // 1. Buscamos los IDs de los Roles necesarios
+  const rolComercio = await prisma.rol.findUnique({ where: { nombre: "ADMIN_COMERCIO" } });
+  const rolSuperAdmin = await prisma.rol.findUnique({ where: { nombre: "SUPER_ADMIN" } });
 
-  if (!rolComercio) {
-    console.error(" Error: No se encontró el rol ADMIN_COMERCIO. Ejecuta seedRoles primero.");
+  if (!rolComercio || !rolSuperAdmin) {
+    console.error("Error: No se encontraron los roles necesarios (ADMIN_COMERCIO o SUPER_ADMIN). Ejecuta seedRoles primero.");
     return;
   }
 
@@ -21,23 +20,44 @@ export async function seedUsuarios() {
   // Contraseña genérica para pruebas (encriptada)
   const passwordEncriptada = await bcrypt.hash("123456", 10);
 
-  // 3. Crear Usuario A: Dueño de la Bodega
+  // ==========================================
+  //  CREAR TU USUARIO SUPER ADMIN
+  // ==========================================
+  await prisma.usuario.upsert({
+    where: { email: "jjsalvarezz@gmail.com" },
+    update: {}, // Si ya existe, no hace nada
+    create: {
+      nombre: "Juan Álvarez",
+      email: "jjsalvarezz@gmail.com",
+      password: passwordEncriptada, // Contraseña: 123456
+      rolId: rolSuperAdmin.id,      // Rol: SUPER_ADMIN
+      comercioId: null,             // IMPORTANTE: Null porque gestionas todo
+    },
+  });
+  console.log("Usuario creado: jjsalvarezz@gmail.com (SUPER ADMIN)");
+
+
+  // ==========================================
+  //  CREAR USUARIOS DE COMERCIOS (CLIENTES)
+  // ==========================================
+  
+  // Usuario A: Dueño de la Bodega
   if (bodega) {
     await prisma.usuario.upsert({
       where: { email: "bodega@demo.com" },
-      update: {}, // Si existe, no hace nada
+      update: {},
       create: {
         nombre: "Juan Bodeguero",
         email: "bodega@demo.com",
         password: passwordEncriptada,
         rolId: rolComercio.id,
-        comercioId: bodega.id, // <--- AQUÍ LO VINCULAMOS A SU NEGOCIO
+        comercioId: bodega.id, 
       },
     });
-    console.log("  Usuario creado: bodega@demo.com (Dueño de Bodega)");
+    console.log("Usuario creado: bodega@demo.com (Dueño de Bodega)");
   }
 
-  // 4. Crear Usuario B: Dueño de la Ferretería
+  // Usuario B: Dueño de la Ferretería
   if (ferreteria) {
     await prisma.usuario.upsert({
       where: { email: "ferreteria@demo.com" },
@@ -47,9 +67,9 @@ export async function seedUsuarios() {
         email: "ferreteria@demo.com",
         password: passwordEncriptada,
         rolId: rolComercio.id,
-        comercioId: ferreteria.id, // <--- VINCULADO A LA FERRETERÍA
+        comercioId: ferreteria.id,
       },
     });
-    console.log("  Usuario creado: ferreteria@demo.com (Dueño de Ferretería)");
+    console.log("Usuario creado: ferreteria@demo.com (Dueño de Ferretería)");
   }
 }

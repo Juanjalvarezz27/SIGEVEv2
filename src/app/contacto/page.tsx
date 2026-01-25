@@ -10,9 +10,9 @@ import {
   Clock,
   MapPin,
   Sparkles,
-  X,    // Para el modal
-  Copy, // Para el modal
-  Check // Para el modal
+  X,    
+  Copy, 
+  Check 
 } from "lucide-react";
 
 export default function ContactoPage() {

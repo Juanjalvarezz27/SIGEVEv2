@@ -14,7 +14,10 @@ import {
   LogIn,
   Boxes,
   PhoneCall,
-  CircleDollarSign
+  CircleDollarSign,
+  Users,       // Icono para Super Admin
+  Store,       // Icono para Super Admin
+  ShieldAlert  // Icono para Super Admin
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { NavbarProps, UserSession } from "../types/login";
@@ -26,11 +29,10 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const user = (session?.user as UserSession) || initialUser;
-
-  // Tamaño de iconos estándar
   const iconSize = 18;
 
-  const navItems = [
+  // --- MENÚ PARA CLIENTES (ADMIN_COMERCIO) ---
+  const clientNavItems = [
     { name: "Dashboard", href: "/home", icon: <Package size={iconSize} /> },
     { name: "Registrar Venta", href: "/home/registrar-venta", icon: <Home size={iconSize} /> },
     { name: "Ventas", href: "/home/ventas", icon: <ReceiptText size={iconSize} /> },
@@ -40,30 +42,40 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
     { name: "Ajustes", href: "/home/configuracion", icon: <Settings size={iconSize} /> },
   ];
 
+  // --- MENÚ PARA TI (SUPER_ADMIN) ---
+  const adminNavItems = [
+    { name: "Admin Panel", href: "/admin", icon: <ShieldAlert size={iconSize} /> },
+    { name: "Comercios", href: "/admin/comercios", icon: <Store size={iconSize} /> },
+    { name: "Usuarios", href: "/admin/usuarios", icon: <Users size={iconSize} /> },
+    { name: "Configuración", href: "/admin/config", icon: <Settings size={iconSize} /> },
+  ];
+
+  // Selección automática de menú según el rol
+  const itemsToShow = user?.rol === 'SUPER_ADMIN' ? adminNavItems : clientNavItems;
+
   return (
     <>
       <nav className="bg-white border-b border-gray-200 h-[64px] shadow-sm sticky top-0 z-50">
         <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 flex items-center justify-between h-full">
 
-          {/* 1. BRANDING COMPACTO (Siempre igual) */}
-          <Link href="/" className="flex items-center flex-shrink-0 group mr-4" title="Ir al Inicio">
-            <div className="h-9 w-9 rounded-lg bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200 transition-transform group-hover:scale-105 active:scale-95">
+          {/* 1. BRANDING */}
+          <Link href={user ? (user.rol === 'SUPER_ADMIN' ? "/admin" : "/home") : "/"} className="flex items-center flex-shrink-0 group mr-4" title="Ir al Inicio">
+            <div className={`h-9 w-9 rounded-lg flex items-center justify-center shadow-md transition-transform group-hover:scale-105 active:scale-95 ${user?.rol === 'SUPER_ADMIN' ? 'bg-black shadow-gray-400' : 'bg-indigo-600 shadow-indigo-200'}`}>
               <span className="text-white font-black text-xs tracking-tighter">SaaS</span>
             </div>
-            {/* Si no hay usuario, mostramos el texto para que se vea bien la landing */}
             {!user && (
               <div className="hidden md:block ml-3">
-                 <h1 className="text-base font-bold text-gray-800 leading-tight">Plataforma</h1>
-                 <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Gestión</p>
+                <h1 className="text-base font-bold text-gray-800 leading-tight">Plataforma</h1>
+                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Gestión</p>
               </div>
             )}
           </Link>
 
-          {/* 2. NAVEGACIÓN CENTRAL (Solo si hay usuario) */}
+          {/* 2. NAVEGACIÓN CENTRAL (Dinámica según Rol) */}
           {user && (
             <div className="flex-1 flex items-center justify-start md:justify-center px-2 overflow-x-auto no-scrollbar mask-linear">
               <div className="flex items-center gap-1">
-                {navItems.map((item) => {
+                {itemsToShow.map((item) => {
                   const isActive = pathname === item.href;
                   return (
                     <Link
@@ -81,7 +93,6 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
                       <span className={`${isActive ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600"}`}>
                         {item.icon}
                       </span>
-                      {/* Texto oculto en laptops pequeñas, visible en monitores grandes */}
                       <span className="ml-2 hidden xl:inline-block">{item.name}</span>
                     </Link>
                   );
@@ -90,21 +101,20 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
             </div>
           )}
 
-          {/* 3. ZONA DERECHA (Usuario o Links Públicos) */}
+          {/* 3. ZONA DERECHA (Perfil) */}
           <div className="flex items-center gap-3 flex-shrink-0 ml-2">
             {user ? (
-              // --- MODO LOGUEADO (Compacto) ---
               <div className="flex items-center gap-3 pl-3 border-l border-gray-200 h-8">
                 <div className="hidden text-right sm:block">
                   <div className="text-sm font-bold text-gray-800 leading-none truncate max-w-[100px]">
                     {user.nombre?.split(' ')[0]}
                   </div>
-                  <div className="text-[9px] text-gray-500 font-bold uppercase mt-1 text-right truncate max-w-[100px]">
+                  <div className={`text-[9px] font-bold uppercase mt-1 text-right truncate max-w-[100px] ${user.rol === 'SUPER_ADMIN' ? 'text-red-600' : 'text-gray-500'}`}>
                     {user.rol?.replace('_', ' ') || "USUARIO"}
                   </div>
                 </div>
 
-                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center border border-gray-200 text-indigo-700 font-bold text-xs shadow-sm">
+                <div className={`h-9 w-9 rounded-full flex items-center justify-center border text-white font-bold text-xs shadow-sm ${user.rol === 'SUPER_ADMIN' ? 'bg-gray-900 border-gray-800' : 'bg-gradient-to-br from-indigo-50 to-white border-gray-200 text-indigo-700'}`}>
                   {user.nombre?.substring(0, 2).toUpperCase() || "US"}
                 </div>
 
@@ -117,27 +127,20 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
                 </button>
               </div>
             ) : (
-              // --- MODO NO LOGUEADO (Restaurado con Iconos) ---
+              // Links Públicos
               <div className="flex items-center gap-4 sm:gap-6">
-                 <Link href="/" className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
-                   <Home size={20} />
-                   <span className="hidden sm:inline">Inicio</span>
-                 </Link>
-
-                 <Link href="/demo" className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
-                   <Boxes size={20} />
-                   <span className="hidden sm:inline">Demo</span>
-                 </Link>
-
-                 <Link href="/contacto" className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
-                   <PhoneCall size={20} />
-                   <span className="hidden sm:inline">Contacto</span>
-                 </Link>
-                 
-                 <Link href="/api/auth/signin" className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all">
-                   <LogIn size={18} />
-                   <span className="hidden sm:inline">Ingresar</span>
-                 </Link>
+                <Link href="/" className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
+                  <Home size={20} /> <span className="hidden sm:inline">Inicio</span>
+                </Link>
+                <Link href="/demo" className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
+                  <Boxes size={20} /> <span className="hidden sm:inline">Demo</span>
+                </Link>
+                <Link href="/contacto" className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
+                  <PhoneCall size={20} /> <span className="hidden sm:inline">Contacto</span>
+                </Link>
+                <Link href="/api/auth/signin" className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all">
+                  <LogIn size={18} /> <span className="hidden sm:inline">Ingresar</span>
+                </Link>
               </div>
             )}
           </div>

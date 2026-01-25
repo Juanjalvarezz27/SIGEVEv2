@@ -14,11 +14,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id;
         token.comercioId = user.comercioId;
         // @ts-ignore
-        token.rol = user.rol?.nombre;
-        
-        // CORRECCIÓN: Guardamos el nombre en el token
+        token.rol = user.rol?.nombre; 
         // @ts-ignore
-        token.nombre = user.nombre; 
+        token.nombre = user.nombre;
       }
       return token;
     },
@@ -30,8 +28,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.comercioId = token.comercioId;
         // @ts-ignore
         session.user.rol = token.rol;
-
-        // CORRECCIÓN: Pasamos el nombre del token a la sesión
         // @ts-ignore
         session.user.nombre = token.nombre;
       }
@@ -51,7 +47,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (parsedCredentials.success) {
           const { email, password } = parsedCredentials.data;
-          
+
           const user = await prisma.usuario.findUnique({
             where: { email },
             include: { rol: true }

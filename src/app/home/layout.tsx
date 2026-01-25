@@ -6,7 +6,7 @@ export default async function HomeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // 1. Verificamos la sesión en el SERVIDOR 
+  // 1. Verificamos la sesión
   const session = await auth();
 
   // 2. Si NO hay sesión -> Al login
@@ -14,7 +14,12 @@ export default async function HomeLayout({
     redirect("/login");
   }
 
-  // 3. Si hay sesión, adelante -> Muestra el contenido
+  // @ts-ignore
+  if (session.user?.rol === "SUPER_ADMIN") {
+    redirect("/admin");
+  }
+
+  // 4. Si eres usuario normal, adelante
   return (
     <div className="bg-gray-50 min-h-screen">
       {children}
