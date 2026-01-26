@@ -65,42 +65,37 @@ export default function CarritoVenta({
   tasaBCV,
   limpiarCarrito
 }: CarritoVentaProps) {
-  
+ 
   const total = calcularTotal();
-  
-  // --- ESTADOS LOCALES DEL CARRITO ---
+ 
+  // --- ESTADOS LOCALES ---
   const [pesoInputs, setPesoInputs] = useState<{ [key: string]: string }>({});
   const [isEditing, setIsEditing] = useState<{ [key: string]: boolean }>({});
 
-  // --- ESTADOS DEL MODAL DE FIADO ---
+  // --- ESTADOS MODAL FIADO ---
   const [modalFiadoOpen, setModalFiadoOpen] = useState(false);
-  
-  // Campos del Formulario
   const [clienteNombre, setClienteNombre] = useState("");
   const [clienteTelefono, setClienteTelefono] = useState("");
   const [clienteNota, setClienteNota] = useState("");
   const [guardandoFiado, setGuardandoFiado] = useState(false);
 
-  // --- LÓGICA DE AUTOCOMPLETADO ---
+  // --- AUTOCOMPLETADO ---
   const [deudoresExistentes, setDeudoresExistentes] = useState<any[]>([]);
   const [sugerencias, setSugerencias] = useState<any[]>([]);
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
 
-  // Cargar lista de deudores cuando se abre el modal
   useEffect(() => {
     if (modalFiadoOpen) {
-      // Cargamos deudas tipo COBRAR para obtener nombres únicos
       fetch('/api/deudas?tipo=COBRAR')
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) {
             const unicos = new Map();
             data.forEach((d: any) => {
-              // Guardamos nombre y teléfono del último registro encontrado
               if (!unicos.has(d.persona.toLowerCase())) {
-                unicos.set(d.persona.toLowerCase(), { 
-                  persona: d.persona, 
-                  telefono: d.telefono 
+                unicos.set(d.persona.toLowerCase(), {
+                  persona: d.persona,
+                  telefono: d.telefono
                 });
               }
             });
@@ -111,11 +106,10 @@ export default function CarritoVenta({
     }
   }, [modalFiadoOpen]);
 
-  // Manejar cambio en el input de nombre
   const handleNombreChange = (val: string) => {
     setClienteNombre(val);
     if (val.length > 1) {
-      const filtrados = deudoresExistentes.filter(d => 
+      const filtrados = deudoresExistentes.filter(d =>
         d.persona.toLowerCase().includes(val.toLowerCase())
       );
       setSugerencias(filtrados);
@@ -125,14 +119,13 @@ export default function CarritoVenta({
     }
   };
 
-  // Seleccionar de la lista
   const seleccionarCliente = (cliente: any) => {
     setClienteNombre(cliente.persona);
-    setClienteTelefono(cliente.telefono || ""); // Autocompletar teléfono también
+    setClienteTelefono(cliente.telefono || "");
     setMostrarSugerencias(false);
   };
 
-  // --- SINCRONIZACIÓN DE PESOS ---
+  // --- PESOS ---
   useEffect(() => {
     const nextInputs: { [key: string]: string } = {};
     productosSeleccionados.forEach(p => {
@@ -145,7 +138,7 @@ export default function CarritoVenta({
   }, [productosSeleccionados, isEditing]);
 
   const handlePesoChange = (id: string, value: string) => setPesoInputs(prev => ({ ...prev, [id]: value }));
-  
+ 
   const handlePesoBlur = (id: string, value: string) => {
     setIsEditing(prev => ({ ...prev, [id]: false }));
     let num = parseFloat(value.replace(',', '.'));
@@ -161,7 +154,7 @@ export default function CarritoVenta({
   // --- GUARDAR FIADO ---
   const handleFiar = async () => {
     if (!clienteNombre.trim()) return toast.warning("Escribe el nombre del cliente");
-    
+   
     setGuardandoFiado(true);
     try {
       const itemsString = productosSeleccionados.map(p => {
@@ -169,16 +162,16 @@ export default function CarritoVenta({
          const cant = p.porPeso ? p.peso : p.cantidad;
          return `• ${cant} ${unid} x ${p.nombre} ($${p.precio})`;
       }).join("\n");
-      
+     
       const descripcionFinal = clienteNota ? `${clienteNota}\n${itemsString}` : itemsString;
 
       const payload = {
-        tipo: "COBRAR",         
+        tipo: "COBRAR",        
         persona: clienteNombre,
         telefono: clienteTelefono,
         descripcion: descripcionFinal,
         monto: total,
-        productos: productosSeleccionados 
+        productos: productosSeleccionados
       };
 
       const res = await fetch("/api/deudas", {
@@ -205,7 +198,7 @@ export default function CarritoVenta({
   return (
     <>
     <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 flex flex-col h-full relative">
-      
+     
       {/* HEADER */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
@@ -217,7 +210,7 @@ export default function CarritoVenta({
         </span>
       </div>
 
-      {/* LISTA DE ITEMS */}
+      {/* ITEMS */}
       <div className="space-y-3 mb-6 max-h-96 overflow-y-auto pr-1 flex-1 custom-scrollbar">
         {productosSeleccionados.length === 0 ? (
           <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200 h-full flex flex-col justify-center items-center">
@@ -271,7 +264,7 @@ export default function CarritoVenta({
         )}
       </div>
 
-      {/* MÉTODOS DE PAGO */}
+      {/* PAGOS */}
       <div className="mb-6">
         <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Método de Pago</label>
         <div className="grid grid-cols-2 gap-2">
@@ -283,7 +276,7 @@ export default function CarritoVenta({
         </div>
       </div>
 
-      {/* BOTONES ACCIÓN */}
+      {/* BOTONES */}
       <div className="grid grid-cols-2 gap-3 mt-auto">
         <button onClick={() => setModalFiadoOpen(true)} disabled={cargando || productosSeleccionados.length === 0} className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl font-bold text-gray-700 bg-white border-2 border-orange-100 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 transition-all disabled:opacity-50 active:scale-95">
           <UserMinus size={20}/>
@@ -294,83 +287,89 @@ export default function CarritoVenta({
           <span className="text-xs">Cobrar Ahora</span>
         </button>
       </div>
-
     </div>
 
-    {/* --- MODAL SIMPLE CON AUTOCOMPLETADO --- */}
+    {/* --- MODAL FIAR PEDIDO (DISEÑO MEJORADO) --- */}
     {modalFiadoOpen && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-        <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 animate-in zoom-in-95 border-t-4 border-orange-500" onClick={(e) => e.stopPropagation()}>
-          
-          <div className="flex justify-between items-center mb-6">
-             <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
-                <UserMinus className="text-orange-500"/> Fiar Pedido
-             </h3>
-             <button onClick={() => setModalFiadoOpen(false)}><X className="text-gray-400 hover:text-gray-600"/></button>
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+         
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+             <div>
+                <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                   Fiar Pedido <UserMinus className="text-orange-500" size={24}/>
+                </h3>
+             </div>
+             <button onClick={() => setModalFiadoOpen(false)} className="p-2 bg-white hover:bg-gray-100 border border-gray-200 rounded-full text-gray-400 hover:text-gray-600 transition-colors">
+                <X size={18}/>
+             </button>
           </div>
 
-          <div className="space-y-4 mb-6">
-             
-             {/* CAMPO CLIENTE CON SUGERENCIAS */}
-             <div className="relative">
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">Cliente *</label>
-                <div className="flex items-center gap-2 border rounded-xl px-3 py-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 relative">
-                   <User size={18} className="text-gray-400"/>
-                   <input 
-                      autoFocus 
-                      className="w-full outline-none font-bold text-gray-800" 
-                      placeholder="Buscar o escribir nombre..." 
-                      value={clienteNombre} 
+          <div className="p-6 space-y-5">
+             {/* CLIENTE */}
+             <div className="relative z-20">
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Nombre del Cliente *</label>
+                <div className="relative group">
+                   <User className="absolute left-3 top-3.5 text-gray-400" size={18}/>
+                   <input
+                      autoFocus
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100 font-bold text-gray-800 transition-all"
+                      placeholder="Buscar nombre..."
+                      value={clienteNombre}
                       onChange={(e) => handleNombreChange(e.target.value)}
                       onBlur={() => setTimeout(() => setMostrarSugerencias(false), 200)}
                    />
                 </div>
-                
-                {/* LISTA DESPLEGABLE */}
+               
                 {mostrarSugerencias && sugerencias.length > 0 && (
-                   <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto">
-                      <div className="px-3 py-2 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase">Clientes encontrados</div>
+                   <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto">
+                      <div className="px-4 py-2 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase">Sugerencias</div>
                       {sugerencias.map((s, idx) => (
-                         <button 
+                         <button
                             key={idx}
                             onClick={() => seleccionarCliente(s)}
-                            className="w-full text-left px-4 py-2 hover:bg-orange-50 text-sm text-gray-700 font-medium flex justify-between items-center"
+                            className="w-full text-left px-4 py-3 hover:bg-orange-50 text-sm text-gray-700 font-bold flex justify-between items-center border-b border-gray-50"
                          >
-                            <span>{s.persona}</span>
-                            {s.telefono && <span className="text-xs text-gray-400">{s.telefono}</span>}
+                            {s.persona}
+                            {s.telefono && <span className="text-xs text-gray-400 font-normal">{s.telefono}</span>}
                          </button>
                       ))}
                    </div>
                 )}
              </div>
 
-             {/* CAMPO TELÉFONO */}
+             {/* TELEFONO */}
              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">Teléfono (Opcional)</label>
-                <div className="flex items-center gap-2 border rounded-xl px-3 py-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100">
-                   <Phone size={18} className="text-gray-400"/>
-                   <input 
-                       className="w-full outline-none font-medium text-gray-700 placeholder:font-normal" 
-                       placeholder="0412..." 
-                       value={clienteTelefono} 
-                       onChange={e => setClienteTelefono(e.target.value)} 
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Teléfono</label>
+                <div className="relative">
+                   <Phone className="absolute left-3 top-3.5 text-gray-400" size={18}/>
+                   <input
+                       className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100 font-medium text-gray-700"
+                       placeholder="0412..."
+                       value={clienteTelefono}
+                       onChange={e => setClienteTelefono(e.target.value)}
                    />
                 </div>
              </div>
 
-             {/* CAMPO NOTA */}
+             {/* NOTA */}
              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">Nota (Opcional)</label>
-                <div className="flex gap-2 border rounded-xl px-3 py-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100">
-                   <FileText size={18} className="text-gray-400 mt-0.5"/>
-                   <textarea className="w-full outline-none text-sm resize-none h-16 text-gray-700" placeholder="Detalles..." value={clienteNota} onChange={e => setClienteNota(e.target.value)} />
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Nota</label>
+                <div className="relative">
+                   <FileText className="absolute left-3 top-3.5 text-gray-400" size={18}/>
+                   <textarea 
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100 text-sm font-medium text-gray-700 resize-none h-20" 
+                        placeholder="Detalles..." 
+                        value={clienteNota} 
+                        onChange={e => setClienteNota(e.target.value)} 
+                   />
                 </div>
              </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="p-6 pt-2 border-t border-gray-100 flex gap-3">
              <button onClick={() => setModalFiadoOpen(false)} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200">Cancelar</button>
-             <button onClick={handleFiar} disabled={guardandoFiado || !clienteNombre} className="flex-[2] py-3 bg-orange-600 text-white font-bold rounded-xl shadow-lg hover:bg-orange-700 active:scale-95 disabled:opacity-70 flex justify-center items-center gap-2">
+             <button onClick={handleFiar} disabled={guardandoFiado || !clienteNombre} className="flex-[1.5] py-3 bg-orange-600 text-white font-bold rounded-xl shadow-lg hover:bg-orange-700 active:scale-95 disabled:opacity-70 flex justify-center items-center gap-2">
                 {guardandoFiado ? <Loader2 className="animate-spin"/> : "Confirmar Deuda"}
              </button>
           </div>
