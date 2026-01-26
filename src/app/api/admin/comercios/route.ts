@@ -17,10 +17,12 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
       include: {
         _count: {
-          select: { usuarios: true, ventas: true }
+          // AGREGAMOS 'productos: true' AQUÍ
+          select: { usuarios: true, ventas: true, productos: true } 
         },
         usuarios: {
-            take: 1,
+            take: 1, 
+            // Ordenamos por fecha para intentar agarrar al creador
             select: { id: true, nombre: true, email: true, rol: true }
         }
       }
@@ -32,7 +34,9 @@ export async function GET(request: Request) {
   }
 }
 
+// El POST se queda igual, no hace falta tocarlo...
 export async function POST(request: Request) {
+  // ... (Tu código POST existente)
   try {
     const session = await auth();
     // @ts-ignore
@@ -57,7 +61,6 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(passwordUsuario, 10);
 
     const nuevoComercio = await prisma.$transaction(async (tx) => {
-      // 1. Crear Comercio
       const comercio = await tx.comercio.create({
         data: {
           nombre: nombreComercio,
@@ -71,7 +74,6 @@ export async function POST(request: Request) {
         }
       });
 
-      // 2. Crear Usuario Dueño
       await tx.usuario.create({
         data: {
           nombre: nombreContacto || "Admin",
@@ -82,8 +84,6 @@ export async function POST(request: Request) {
         }
       });
 
-      // ¡ELIMINADO! Ya no creamos métodos de pago automáticos.
-      
       return comercio;
     });
 

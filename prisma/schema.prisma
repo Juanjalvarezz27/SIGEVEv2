@@ -27,14 +27,12 @@ model Comercio {
   
   nombre    String   
   direccion String?  
-  logoUrl   String?  
 
   nombreContacto String? 
   telefono       String? 
   emailContacto  String?
 
   estado           EstadoComercio @default(ACTIVO)
-  plan             String         @default("BASICO") 
   fechaVencimiento DateTime?   
   ultimoPago       DateTime?    
 
@@ -79,6 +77,8 @@ model Producto {
   precio      Float
   porPeso     Boolean?
   stock       Float    @default(0)
+
+  activo      Boolean  @default(true)
 
   comercioId  String
   comercio    Comercio @relation(fields: [comercioId], references: [id])
