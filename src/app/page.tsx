@@ -1,7 +1,6 @@
 import { auth } from "@/src/auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-// Importamos el nuevo componente cliente
 import ContactButtons from "@/src/components/Landing/ContactButtons"; 
 import { 
   BarChart3, 
@@ -62,7 +61,7 @@ export default async function Home() {
   ];
 
   return (
-    <div className="bg-white scroll-smooth">
+    <div className="bg-white scroll-smooth overflow-x-hidden">
       <style>{`
         @keyframes scroll {
           0% { transform: translateX(0); }
@@ -74,12 +73,15 @@ export default async function Home() {
       `}</style>
       
       {/* === HERO SECTION === */}
-      <section className="relative flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-6 min-h-[90vh] border-b border-gray-100 overflow-hidden">
+      <section className="relative flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4 sm:px-6 min-h-[90vh] border-b border-gray-100 overflow-hidden">
         
+        {/* Patrón de fondo */}
         <div className="absolute top-0 left-0 w-full h-full opacity-30 bg-[radial-gradient(#6366f1_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none"></div>
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-200/20 rounded-full blur-[100px] pointer-events-none"></div>
+        
+        {/* Luz de fondo: Ajustada para móvil (w-[300px]) y escritorio (w-[800px]) */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[300px] sm:w-[800px] sm:h-[500px] bg-indigo-200/20 rounded-full blur-[60px] sm:blur-[100px] pointer-events-none"></div>
 
-        <div className="text-center max-w-5xl z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 pt-10">
+        <div className="text-center max-w-5xl z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 pt-24 pb-12 w-full">
           
           <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 bg-white border border-indigo-100 text-indigo-700 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm hover:shadow-md transition-all">
             <span className="relative flex h-2 w-2">
@@ -89,21 +91,21 @@ export default async function Home() {
             Sistema 100% Operativo
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black text-gray-900 mb-8 tracking-tight leading-[1.1]">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-gray-900 mb-6 sm:mb-8 tracking-tight leading-[1.1]">
             Gestiona tu comercio <br className="hidden md:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500">
               con precisión milimétrica
             </span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-gray-500 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-500 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed font-medium px-2">
             El sistema SaaS completo: Ventas rápidas, Control de Stock real, Deudas y Reportes en un solo lugar.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full sm:w-auto px-4 sm:px-0">
             <Link 
               href="/demo" 
-              className="group inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all bg-indigo-600 rounded-full hover:bg-indigo-700 hover:scale-105 shadow-xl hover:shadow-indigo-500/40 ring-4 ring-transparent hover:ring-indigo-100"
+              className="group w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all bg-indigo-600 rounded-full hover:bg-indigo-700 hover:scale-105 shadow-xl hover:shadow-indigo-500/40 ring-4 ring-transparent hover:ring-indigo-100"
             >
               Prueba la Demo
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -111,23 +113,25 @@ export default async function Home() {
             
             <Link 
               href="#features" 
-              className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-gray-600 transition-all bg-transparent hover:bg-gray-50 rounded-full hover:text-gray-900"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-gray-600 transition-all bg-transparent hover:bg-gray-50 rounded-full hover:text-gray-900"
             >
               Ver Funcionalidades
             </Link>
           </div>
 
-          {/* Carrusel */}
-          <div className="mt-16 w-full max-w-4xl mx-auto overflow-hidden opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-            <div className="flex whitespace-nowrap animate-scroll">
+          {/* Carrusel Ajustado (CINTILLO) */}
+          <div className="mt-16 w-full max-w-[100vw] overflow-hidden opacity-50 grayscale hover:grayscale-0 transition-all duration-500 relative">
+            
+            {/* Máscara de desvanecimiento a los lados (evita el corte brusco) */}
+            <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-r from-white via-transparent to-white w-full h-full"></div>
+
+            <div className="flex whitespace-nowrap animate-scroll relative z-10">
                {logos.map((logo, index) => (
-                 <div key={index} className="mx-8 flex items-center gap-2 font-bold text-xl text-gray-400">
-                    <Store className="w-5 h-5 mb-1" /> {logo}
+                 <div key={index} className="mx-6 sm:mx-8 flex items-center gap-2 font-bold text-base sm:text-xl text-gray-400">
+                    <Store className="w-4 h-4 sm:w-5 sm:h-5 mb-1" /> {logo}
                  </div>
                ))}
             </div>
-            <div className="absolute left-0 bottom-0 w-20 h-24 bg-gradient-to-r from-gray-50/50 to-transparent z-10 pointer-events-none"></div>
-            <div className="absolute right-0 bottom-0 w-20 h-24 bg-gradient-to-l from-gray-50/50 to-transparent z-10 pointer-events-none"></div>
           </div>
 
         </div>
