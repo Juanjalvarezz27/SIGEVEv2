@@ -17,7 +17,8 @@ import {
   CircleDollarSign,
   Users,       
   Store,       
-  ShieldAlert  
+  ShieldAlert,
+  BadgeDollarSign  
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { NavbarProps, UserSession } from "../types/login";
@@ -46,7 +47,7 @@ const Navbar = ({ user: initialUser }: NavbarProps) => {
   // --- MENÚ PARA TI (SUPER_ADMIN) ---
   const adminNavItems = [
     { name: "Panel Maestro", href: "/admin", icon: <ShieldAlert size={iconSize} /> },
-    { name: "Comercios", href: "/admin/comercios", icon: <Store size={iconSize} /> },
+    { name: "Auditoría Pagos", href: "/admin/pagos", icon: <BadgeDollarSign size={iconSize} /> },
   ];
 
   // Selección automática de menú según el rol

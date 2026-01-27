@@ -53,6 +53,7 @@ model PagoSuscripcion {
   metodo      String 
   referencia  String?
   nota        String?  
+  meses       Int?     @default(1)
   
   comercioId  String
   comercio    Comercio @relation(fields: [comercioId], references: [id])

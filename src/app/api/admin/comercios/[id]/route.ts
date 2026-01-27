@@ -8,7 +8,6 @@ interface Params {
   params: Promise<{ id: string }>;
 }
 
-// PUT: Renovación y Edición (Se mantiene lógica simple)
 export async function PUT(request: Request, { params }: Params) {
   try {
     const session = await auth();
@@ -18,23 +17,49 @@ export async function PUT(request: Request, { params }: Params) {
     const { id } = await params;
     const body = await request.json();
     
-    // RENOVAR
+    // --- LÓGICA DE RENOVACIÓN + PAGO ---
     if (body.accion === 'RENOVAR') {
-       const { meses } = body; 
+       const { meses, monto, metodo, referencia, nota } = body; 
+       
        const mesesSumar = parseInt(meses) || 1;
        const comercio = await prisma.comercio.findUnique({ where: { id } });
        if (!comercio) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
 
+       // 1. Calcular Nueva Fecha
        const baseDate = (comercio.fechaVencimiento && comercio.fechaVencimiento > new Date()) 
             ? comercio.fechaVencimiento : new Date();
        const nuevaFecha = new Date(baseDate);
        nuevaFecha.setMonth(nuevaFecha.getMonth() + mesesSumar);
 
-       const actualizado = await prisma.comercio.update({
+       // 2. Transacción: Actualizar fecha + Guardar dinero
+       await prisma.$transaction(async (tx) => {
+          // A. Actualizar Comercio
+          await tx.comercio.update({
              where: { id },
-             data: { fechaVencimiento: nuevaFecha, estado: 'ACTIVO' }
+             data: { 
+                fechaVencimiento: nuevaFecha, 
+                estado: 'ACTIVO',
+                ultimoPago: new Date()
+             }
+          });
+
+          // B. Crear Registro Contable (Solo si es ingreso positivo y hay monto)
+          if (mesesSumar > 0 && monto && parseFloat(monto) > 0) {
+              await tx.pagoSuscripcion.create({
+                  data: {
+                      comercioId: id,
+                      monto: parseFloat(monto),
+                      metodo: metodo || 'OTRO',
+                      referencia: referencia || 'N/A',
+                      nota: nota || `Renovación por ${mesesSumar} mes(es)`,
+                      meses: mesesSumar, // Guardamos cuántos meses se pagaron
+                      fecha: new Date()
+                  }
+              });
+          }
        });
-       return NextResponse.json({ success: true, comercio: actualizado });
+
+       return NextResponse.json({ success: true, nuevaFecha });
     }
 
     // CAMBIAR ESTADO
@@ -47,11 +72,12 @@ export async function PUT(request: Request, { params }: Params) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error(error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
 
-// DELETE: ELIMINACIÓN TOTAL (CASCADA MANUAL)
+// DELETE: Borrado total (Comercio + Pagos + Usuarios)
 export async function DELETE(request: Request, { params }: Params) {
     try {
         const session = await auth();
@@ -60,21 +86,16 @@ export async function DELETE(request: Request, { params }: Params) {
 
         const { id } = await params;
 
-        // EJECUTAMOS EN TRANSACCIÓN PARA QUE SE BORRE TODO O NADA
         await prisma.$transaction(async (tx) => {
-            // 1. Borrar Usuarios del comercio (incluido el dueño)
-            await tx.usuario.deleteMany({ where: { comercioId: id } });
+            // Borrar Pagos Históricos primero para evitar error de FK
+            await tx.pagoSuscripcion.deleteMany({ where: { comercioId: id } });
             
-            // 2. Borrar Ventas, Productos, Clientes, etc. (Opcional si tienes onCascade en schema, pero mejor asegurar)
-
-            // 3. Finalmente borrar el Comercio
+            await tx.usuario.deleteMany({ where: { comercioId: id } });
             await tx.comercio.delete({ where: { id } });
         });
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        console.error("Error eliminando comercio:", error);
-        // Si falla por Foreign Key constraints y no tienes Cascade en schema:
-        return NextResponse.json({ error: 'No se puede eliminar: Tiene datos asociados (Ventas/Productos).' }, { status: 500 });
+        return NextResponse.json({ error: 'Error al eliminar' }, { status: 500 });
     }
 }
