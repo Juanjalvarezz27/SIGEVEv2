@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { Package, Edit2, Trash2, Plus, Loader2, ChevronLeft, ChevronRight, Boxes } from 'lucide-react';
+import { Package, Edit2, Trash2, Plus, Loader2, ChevronLeft, ChevronRight, Boxes, FileSpreadsheet } from 'lucide-react';
 import useTasaBCV from '../../app/hooks/useTasaBCV';
 import ModalConfirmacion from './ModalConfirmacion';
 import ModalEditarProducto from './ModalEditarProducto';
 import BarraBusqueda from './BarraBusqueda';
 import ModalAgregarProducto from './ModalAgregarProducto';
+import ModalCargaMasiva from '../Productos/ModalCargaMasiva'; 
 import { toast } from 'react-toastify';
 
 interface Producto {
@@ -14,7 +15,7 @@ interface Producto {
   nombre: string;
   precio: number;
   porPeso?: boolean | null;
-  stock: number; // <--- STOCK EN INTERFAZ
+  stock: number;
 }
 
 const ITEMS_PER_PAGE = 30;
@@ -26,7 +27,10 @@ const ProductosList = () => {
 
   const [productoAEliminar, setProductoAEliminar] = useState<Producto | null>(null);
   const [productoAEditar, setProductoAEditar] = useState<Producto | null>(null);
+  
+  // Modales de Creación
   const [mostrarAgregarModal, setMostrarAgregarModal] = useState(false);
+  const [mostrarImportar, setMostrarImportar] = useState(false); // <--- NUEVO ESTADO
 
   const [creandoProducto, setCreandoProducto] = useState(false);
   const [eliminando, setEliminando] = useState(false);
@@ -36,6 +40,7 @@ const ProductosList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
+  // --- Filtrado y Ordenamiento en Cliente ---
   const productosProcesados = useMemo(() => {
     let resultado = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
     if (terminoBusqueda.trim()) {
@@ -46,6 +51,7 @@ const ProductosList = () => {
     return resultado;
   }, [productos, terminoBusqueda]);
 
+  // --- Paginación en Cliente ---
   const totalItems = productosProcesados.length;
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
   const hasNextPage = currentPage < totalPages;
@@ -59,12 +65,14 @@ const ProductosList = () => {
     return productosProcesados.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [productosProcesados, currentPage]);
 
+  // --- Carga Inicial ---
   useEffect(() => { fetchProductos(); }, []);
 
   const fetchProductos = async () => {
     try {
       setLoadingProductos(true);
-      const response = await fetch('/api/productos?limit=500');
+      // Pedimos un límite alto para manejar la paginación en cliente cómodamente
+      const response = await fetch('/api/productos?limit=1000'); 
       if (!response.ok) throw new Error('Error al cargar');
       const data = await response.json();
       const lista = Array.isArray(data.productos) ? data.productos : [];
@@ -83,9 +91,15 @@ const ProductosList = () => {
     }
   };
 
+  // --- Handlers de Acciones ---
   const handleProductoCreado = (nuevoProducto: Producto) => {
     setProductos(prev => [...prev, nuevoProducto]);
     setMostrarAgregarModal(false);
+  };
+
+  const handleImportacionExitosa = () => {
+      fetchProductos(); // Recargamos todo tras importar masivamente
+      setMostrarImportar(false);
   };
 
   const handleEliminarProducto = async () => {
@@ -104,7 +118,6 @@ const ProductosList = () => {
     } catch (e) { toast.error('Error de conexión'); } finally { setEliminando(false); }
   };
 
-  // Se incluye el stock en la actualización local
   const handleEditarProducto = async (id: string, nombre: string, precio: number, porPeso: boolean | null, stock: number) => {
     try {
       setEditando(true);
@@ -129,6 +142,7 @@ const ProductosList = () => {
 
   return (
     <>
+      {/* --- MODALES --- */}
       <ModalConfirmacion
         isOpen={!!productoAEliminar}
         onClose={() => setProductoAEliminar(null)}
@@ -152,8 +166,16 @@ const ProductosList = () => {
         loading={creandoProducto}
       />
 
+      <ModalCargaMasiva 
+        isOpen={mostrarImportar} 
+        onClose={() => setMostrarImportar(false)} 
+        onSuccess={handleImportacionExitosa} 
+      />
+
+      {/* --- TABLA --- */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm" ref={tableContainerRef}>
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+          
           <div className="flex items-center">
             <Package className="h-6 w-6 text-gray-700 mr-3" />
             <div>
@@ -172,9 +194,20 @@ const ProductosList = () => {
               paginaActual={currentPage}
               totalPaginas={totalPages}
             />
+            
+            {/* BOTÓN IMPORTAR EXCEL */}
+            <button
+              onClick={() => setMostrarImportar(true)}
+              className="flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors whitespace-nowrap shadow-sm shadow-emerald-200 font-bold text-sm"
+              title="Carga Masiva desde Excel"
+            >
+              <FileSpreadsheet size={18} className="mr-2" /> Importar
+            </button>
+
+            {/* BOTÓN AGREGAR MANUAL */}
             <button
               onClick={() => setMostrarAgregarModal(true)}
-              className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap"
+              className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap shadow-sm font-bold text-sm"
             >
               <Plus size={18} className="mr-2" /> Agregar
             </button>
