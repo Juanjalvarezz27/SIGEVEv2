@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import {
-  Eye, ShoppingBag, X, CheckCircle2, AlertCircle,
-  Send, CreditCard, User, FileText, Calendar, Box, Hash
+  Eye, ShoppingBag, X, CheckCircle2,
+  Send, CreditCard, User, FileText, Calendar
 } from 'lucide-react';
 
 interface Venta {
@@ -55,8 +55,8 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
         ? (ventaSeleccionada.totalBs / ventaSeleccionada.total).toFixed(2) 
         : "0.00";
 
-    // 3. Construir Encabezado
-    let mensaje = `*NOTA DE ENTREGA*\n`;
+    // --- CAMBIO 1: TÍTULO DEL MENSAJE DE WHATSAPP ---
+    let mensaje = `*RESUMEN DE COMPRA (NO FISCAL)*\n`; 
     mensaje += `${fechaStr} - ${horaStr}\n`;
     mensaje += `--------------------------------\n`;
 
@@ -65,7 +65,6 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
       mensaje += `*Cliente:* ${ventaSeleccionada.deuda.persona}\n`;
       mensaje += `*Concepto:*\n`;
       
-      // Intentamos usar el JSON si existe para listar bonito, sino la descripción texto
       if (ventaSeleccionada.deuda.detalles && Array.isArray(ventaSeleccionada.deuda.detalles)) {
          ventaSeleccionada.deuda.detalles.forEach((p: any) => {
             const unidad = p.porPeso ? 'kg' : 'und';
@@ -76,9 +75,8 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
       }
       
     } else {
-      mensaje += `*Productos:*\n`;
+      mensaje += `*Detalle:*\n`;
       ventaSeleccionada.productos.forEach(p => {
-        // Asumiendo que p tiene precioUnitario, si no, solo cantidad y nombre
         const unidad = p.peso ? 'kg' : 'und'; 
         const cantidadStr = p.peso ? p.peso : p.cantidad;
         mensaje += `• ${cantidadStr} ${unidad} x ${p.producto.nombre}\n`;
@@ -90,12 +88,12 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
     // 5. Totales y Método
     mensaje += `*TOTAL: $${ventaSeleccionada.total.toFixed(2)}*\n`;
     mensaje += `Bs: ${ventaSeleccionada.totalBs.toFixed(2)}\n`;
-    mensaje += `Tasa: BCV (Bs ${tasaCalculada})\n\n`;
+    mensaje += `Ref. Tasa: Bs ${tasaCalculada}\n\n`;
     mensaje += `Método: ${ventaSeleccionada.metodoPago.nombre}\n`;
     
-    // 6. Pie de página legal
+    // --- CAMBIO 2: PIE DE PÁGINA LEGAL ---
     mensaje += `--------------------------------\n`;
-    mensaje += `_Este documento es un control de entrega y no sustituye la Factura Fiscal._`;
+    mensaje += `_Este es un resumen de operación interna y NO sustituye la Factura Fiscal._`;
 
     // 7. Enviar
     let numeroFinal = telefonoReceptor.replace(/\D/g, '');
@@ -105,9 +103,8 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
     window.open(`https://wa.me/${numeroFinal}?text=${encodeURIComponent(mensaje)}`, '_blank');
   };
 
-  // --- RENDERIZADOR HÍBRIDO DE DEUDA ---
+  // --- RENDERIZADOR DE DEUDA ---
   const renderDetalleDeuda = (deuda: any) => {
-    // 1. INTENTAR LEER JSON (NUEVO)
     if (deuda.detalles && Array.isArray(deuda.detalles) && deuda.detalles.length > 0) {
         return (
             <div className="space-y-1">
@@ -132,12 +129,10 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
         );
     }
 
-    // 2. FALLBACK A TEXTO (VIEJO)
     const texto = deuda.descripcion || "";
     if (!texto) return <p className="text-sm text-gray-400 italic">Sin detalles.</p>;
 
     return texto.split('\n').map((linea: string, i: number) => {
-        // Detectar Separador de Fecha
         if (linea.includes("---") || linea.includes("Agregado el")) {
             const fechaMatch = linea.match(/(\d{1,2}\/\d{1,2}\/\d{4})/);
             const fecha = fechaMatch ? fechaMatch[0] : "Fecha Anterior";
@@ -151,8 +146,6 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
                 </div>
             );
         }
-
-        // Detectar Producto
         const regexProducto = /• ([\d\.]+) (kg|unid) x (.+) \(\$([\d\.]+)\) ➝ \$([\d\.]+)/;
         const match = linea.match(regexProducto);
 
@@ -259,7 +252,7 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
         </table>
       </div>
 
-      {/* MODAL / NOTA DE ENTREGA */}
+      {/* MODAL */}
       {modalOpen && ventaSeleccionada && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[90vh]">
@@ -271,7 +264,7 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
               <div className="mx-auto w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mb-3 backdrop-blur-sm shadow-inner">
                 {ventaSeleccionada.deuda ? <FileText size={24}/> : <CheckCircle2 size={28} />}
               </div>
-              <h3 className="text-xl font-bold tracking-tight">Nota de Entrega</h3>
+              <h3 className="text-xl font-bold tracking-tight">Nota de Entrega (NO FISCAL)</h3>
               <p className="text-white/90 text-xs font-medium opacity-90 mt-1 uppercase tracking-wide">
                 {new Date(ventaSeleccionada.fechaHora).toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
@@ -347,8 +340,9 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
             </div>
 
             <div className="p-5 border-t border-gray-100 bg-white flex-shrink-0">
+              {/* --- CAMBIO 3: ETIQUETA DE LA UI CAMBIADA --- */}
               <label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block ml-1 tracking-wide">
-                Enviar Recibo Digital
+                Enviar Nota de Entrega
               </label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
