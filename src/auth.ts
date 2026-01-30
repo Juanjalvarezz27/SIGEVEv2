@@ -12,7 +12,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   // --- AGREGA ESTE BLOQUE AQUÍ ---
   session: {
     strategy: "jwt",
-    maxAge: 60, // 12 horas * 60 min * 60 seg = 43200 segundos
+    maxAge: 12 * 60 * 60, // 12 horas * 60 min * 60 seg = 43200 segundos
   },
   // -------------------------------
 
