@@ -30,7 +30,7 @@ const ProductosList = () => {
   
   // Modales de Creación
   const [mostrarAgregarModal, setMostrarAgregarModal] = useState(false);
-  const [mostrarImportar, setMostrarImportar] = useState(false); // <--- NUEVO ESTADO
+  const [mostrarImportar, setMostrarImportar] = useState(false);
 
   const [creandoProducto, setCreandoProducto] = useState(false);
   const [eliminando, setEliminando] = useState(false);
@@ -71,7 +71,6 @@ const ProductosList = () => {
   const fetchProductos = async () => {
     try {
       setLoadingProductos(true);
-      // Pedimos un límite alto para manejar la paginación en cliente cómodamente
       const response = await fetch('/api/productos?limit=1000'); 
       if (!response.ok) throw new Error('Error al cargar');
       const data = await response.json();
@@ -98,7 +97,7 @@ const ProductosList = () => {
   };
 
   const handleImportacionExitosa = () => {
-      fetchProductos(); // Recargamos todo tras importar masivamente
+      fetchProductos();
       setMostrarImportar(false);
   };
 
@@ -173,56 +172,66 @@ const ProductosList = () => {
       />
 
       {/* --- TABLA --- */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm" ref={tableContainerRef}>
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden" ref={tableContainerRef}>
+        
+        {/* HEADER RESPONSIVE CENTRADO */}
+        {/* Usamos 'items-center' en flex-col para centrar todo en móvil */}
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 px-4 sm:px-6 py-6 flex flex-col md:flex-row justify-between items-center gap-6">
           
-          <div className="flex items-center">
-            <Package className="h-6 w-6 text-gray-700 mr-3" />
+          {/* Título: Centrado en móvil */}
+          <div className="flex flex-col sm:flex-row items-center text-center sm:text-left">
+            <Package className="h-8 w-8 sm:h-6 sm:w-6 text-gray-700 mb-2 sm:mb-0 sm:mr-3" />
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Inventario</h2>
               <p className="text-sm text-gray-600">Total: {totalItems} productos</p>
             </div>
           </div>
 
-          <div className="flex gap-3 w-full md:w-auto">
-            <BarraBusqueda
-              terminoBusqueda={terminoBusqueda}
-              onBuscarChange={setTerminoBusqueda}
-              onLimpiarBusqueda={() => setTerminoBusqueda('')}
-              resultados={currentProducts.length}
-              total={totalItems}
-              paginaActual={currentPage}
-              totalPaginas={totalPages}
-            />
+          {/* Controles: Centrados y Full Width en móvil */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
+            {/* Buscador: Full width en móvil */}
+            <div className="w-full sm:w-auto">
+                <BarraBusqueda
+                terminoBusqueda={terminoBusqueda}
+                onBuscarChange={setTerminoBusqueda}
+                onLimpiarBusqueda={() => setTerminoBusqueda('')}
+                resultados={currentProducts.length}
+                total={totalItems}
+                paginaActual={currentPage}
+                totalPaginas={totalPages}
+                />
+            </div>
             
-            {/* BOTÓN IMPORTAR EXCEL */}
-            <button
-              onClick={() => setMostrarImportar(true)}
-              className="flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors whitespace-nowrap shadow-sm shadow-emerald-200 font-bold text-sm"
-              title="Carga Masiva desde Excel"
-            >
-              <FileSpreadsheet size={18} className="mr-2" /> Importar
-            </button>
+            {/* Botones: Divididos 50/50 en móvil para simetría */}
+            <div className="flex gap-2 w-full sm:w-auto">
+                <button
+                onClick={() => setMostrarImportar(true)}
+                className="w-1/2 sm:w-auto flex items-center justify-center px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors whitespace-nowrap shadow-sm shadow-emerald-200 font-bold text-sm"
+                title="Carga Masiva"
+                >
+                <FileSpreadsheet size={18} className="mr-2" /> Importar
+                </button>
 
-            {/* BOTÓN AGREGAR MANUAL */}
-            <button
-              onClick={() => setMostrarAgregarModal(true)}
-              className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap shadow-sm font-bold text-sm"
-            >
-              <Plus size={18} className="mr-2" /> Agregar
-            </button>
+                <button
+                onClick={() => setMostrarAgregarModal(true)}
+                className="w-1/2 sm:w-auto flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap shadow-sm font-bold text-sm"
+                >
+                <Plus size={18} className="mr-2" /> Agregar
+                </button>
+            </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto min-h-[300px]">
-          <table className="w-full">
+        {/* CONTENEDOR TABLA */}
+        <div className="overflow-x-auto min-h-[300px] w-full">
+          <table className="w-full min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
               <tr>
-                <th className="px-6 py-3 text-left">Producto</th>
-                <th className="px-6 py-3 text-left">Stock</th>
-                <th className="px-6 py-3 text-left">Precio USD</th>
-                <th className="px-6 py-3 text-left">Precio Bs</th>
-                <th className="px-6 py-3 text-right">Acciones</th>
+                <th className="px-4 sm:px-6 py-3 text-left whitespace-nowrap">Producto</th>
+                <th className="px-4 sm:px-6 py-3 text-left whitespace-nowrap">Stock</th>
+                <th className="px-4 sm:px-6 py-3 text-left whitespace-nowrap">Precio USD</th>
+                <th className="px-4 sm:px-6 py-3 text-left whitespace-nowrap">Precio Bs</th>
+                <th className="px-4 sm:px-6 py-3 text-right whitespace-nowrap">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -233,19 +242,19 @@ const ProductosList = () => {
               ) : (
                 currentProducts.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{p.nombre}</div>
-                      {p.porPeso && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 rounded-full">Por Peso</span>}
+                    <td className="px-4 sm:px-6 py-4 min-w-[150px]">
+                      <div className="font-medium text-gray-900 break-words">{p.nombre}</div>
+                      {p.porPeso && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 rounded-full whitespace-nowrap">Por Peso</span>}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                         <div className={`flex items-center gap-1 font-bold ${p.stock <= 5 ? 'text-red-600' : 'text-gray-700'}`}>
                             <Boxes size={14}/>
                             {p.stock} {p.porPeso ? 'Kg' : 'Und'}
                         </div>
                     </td>
-                    <td className="px-6 py-4 font-bold text-gray-700">${p.precio.toFixed(2)}</td>
-                    <td className="px-6 py-4 text-green-700 font-bold">Bs {formatBs(p.precio)}</td>
-                    <td className="px-6 py-4 text-right space-x-2">
+                    <td className="px-4 sm:px-6 py-4 font-bold text-gray-700 whitespace-nowrap">${p.precio.toFixed(2)}</td>
+                    <td className="px-4 sm:px-6 py-4 text-green-700 font-bold whitespace-nowrap">Bs {formatBs(p.precio)}</td>
+                    <td className="px-4 sm:px-6 py-4 text-right whitespace-nowrap space-x-2">
                       <button onClick={() => setProductoAEditar(p)} className="text-blue-600 hover:bg-blue-50 p-2 rounded"><Edit2 size={16}/></button>
                       <button onClick={() => setProductoAEliminar(p)} className="text-red-600 hover:bg-red-50 p-2 rounded"><Trash2 size={16}/></button>
                     </td>
@@ -256,20 +265,25 @@ const ProductosList = () => {
           </table>
         </div>
 
+        {/* PAGINACIÓN: Centrada en móvil */}
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t flex justify-between items-center bg-gray-50">
+          <div className="px-4 sm:px-6 py-6 border-t flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={!hasPrevPage}
-              className="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1 text-sm font-medium text-gray-700 transition-colors"
+              className="w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex justify-center items-center gap-2 text-sm font-medium text-gray-700 transition-colors shadow-sm"
             >
               <ChevronLeft size={16} /> Anterior
             </button>
-            <span className="text-sm text-gray-600 font-medium">Página {currentPage} de {totalPages}</span>
+            
+            <span className="text-sm text-gray-600 font-bold bg-white px-3 py-1 rounded border border-gray-200">
+               Página {currentPage} de {totalPages}
+            </span>
+
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={!hasNextPage}
-              className="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1 text-sm font-medium text-gray-700 transition-colors"
+              className="w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex justify-center items-center gap-2 text-sm font-medium text-gray-700 transition-colors shadow-sm"
             >
               Siguiente <ChevronRight size={16} />
             </button>
