@@ -22,35 +22,36 @@ export default async function Home() {
   }
 
   // CARACTERÍSTICAS
+  // Enfoque: Gestión Interna / No Fiscal
   const features = [
     {
-      title: "Control de Stock Real",
-      description: "Inventario a prueba de errores. El sistema descuenta existencias automáticamente al vender, bloquea ventas sin stock y alerta cuando queda poco producto.",
+      title: "Control de Inventario Interno",
+      description: "Administra tu stock real. El sistema descuenta la mercancía al momento de la venta interna, permitiéndote saber exactamente qué tienes en almacén para tus reposiciones.",
       icon: <Box className="w-6 h-6 text-white" />,
     },
     {
-      title: "Sistema de Fiados",
-      description: "Gestiona las cuentas por cobrar. Registra deudas desde el POS, controla abonos, historial de pagos y totaliza lo que te deben tus clientes.",
+      title: "Gestión de Cuentas por Cobrar",
+      description: "Organiza los fiados y créditos. Registra quién te debe, controla los abonos parciales y mantén un saldo claro de tu dinero en la calle.",
       icon: <Banknote className="w-6 h-6 text-white" />, 
     },
     {
-      title: "Precios Inteligentes $/Bs",
-      description: "Olvídate de la calculadora. Define precios en Dólares o Bolívares y el sistema hace la conversión bidireccional automática con la tasa del día.",
+      title: "Calculadora de Divisas",
+      description: "Herramienta de cálculo rápido. Convierte precios de referencia en Dólares a Bolívares automáticamente con la tasa del día para agilizar el cobro.",
       icon: <Calculator className="w-6 h-6 text-white" />, 
     },
     {
-      title: "Estadísticas y Reportes",
-      description: "Visualiza el rendimiento de tu negocio. Gráficas claras de ventas diarias, ingresos totales y desglose exacto de Dólares vs. Bolívares.",
+      title: "Reportes Gerenciales",
+      description: "Estadísticas para el dueño. Analiza el rendimiento de tu negocio, flujo de caja y ganancias reales para tomar decisiones administrativas.",
       icon: <BarChart3 className="w-6 h-6 text-white" />,
     },
     {
-      title: "Notas de Entrega Digitales",
-      description: "Moderniza tu comercio. Envía comprobantes de venta o estados de cuenta de deuda directamente al WhatsApp de tu cliente con un clic.",
+      title: "Notas de Entrega (No Fiscal)",
+      description: "Genera notas de entrega digitales para control interno y envíalos por WhatsApp al cliente.",
       icon: <Smartphone className="w-6 h-6 text-white" />,
     },
     {
-      title: "Seguridad y Roles",
-      description: "Tu información blindada. Accesos restringidos para vendedores y respaldos automáticos de tu data en la nube.",
+      title: "Seguridad de Datos",
+      description: "Tu información administrativa resguardada. Sistema de acceso restringido para uso exclusivo de la gerencia y empleados autorizados.",
       icon: <ShieldCheck className="w-6 h-6 text-white" />,
     },
   ];
@@ -75,10 +76,7 @@ export default async function Home() {
       {/* === HERO SECTION === */}
       <section className="relative flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4 sm:px-6 min-h-[90vh] border-b border-gray-100 overflow-hidden">
         
-        {/* Patrón de fondo */}
         <div className="absolute top-0 left-0 w-full h-full opacity-30 bg-[radial-gradient(#6366f1_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none"></div>
-        
-        {/* Luz de fondo: Ajustada para móvil (w-[300px]) y escritorio (w-[800px]) */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[300px] sm:w-[800px] sm:h-[500px] bg-indigo-200/20 rounded-full blur-[60px] sm:blur-[100px] pointer-events-none"></div>
 
         <div className="text-center max-w-5xl z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 pt-24 pb-12 w-full">
@@ -88,18 +86,20 @@ export default async function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
             </span>
-            Sistema 100% Operativo
+            Gestión Interna (No Fiscal)
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-gray-900 mb-6 sm:mb-8 tracking-tight leading-[1.1]">
-            Gestiona tu comercio <br className="hidden md:block" />
+            Organiza la administración <br className="hidden md:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500">
-              con precisión milimétrica
+              de tu negocio al detalle
             </span>
           </h1>
           
           <p className="text-lg sm:text-xl md:text-2xl text-gray-500 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed font-medium px-2">
-            El sistema SaaS completo: Ventas rápidas, Control de Stock real, Deudas y Reportes en un solo lugar.
+            Software administrativo para dueños de negocios. <br className="hidden sm:block"/>
+            Controla inventario, cuentas y divisas para tu gestión interna. <br/>
+            <span className="text-sm font-bold text-gray-400 uppercase mt-2 block">(No es un sistema de facturación fiscal)</span>
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full sm:w-auto px-4 sm:px-0">
@@ -115,16 +115,13 @@ export default async function Home() {
               href="#features" 
               className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-gray-600 transition-all bg-transparent hover:bg-gray-50 rounded-full hover:text-gray-900"
             >
-              Ver Funcionalidades
+              Ver Herramientas
             </Link>
           </div>
 
-          {/* Carrusel Ajustado (CINTILLO) */}
+          {/* Carrusel */}
           <div className="mt-16 w-full max-w-[100vw] overflow-hidden opacity-50 grayscale hover:grayscale-0 transition-all duration-500 relative">
-            
-            {/* Máscara de desvanecimiento a los lados (evita el corte brusco) */}
             <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-r from-white via-transparent to-white w-full h-full"></div>
-
             <div className="flex whitespace-nowrap animate-scroll relative z-10">
                {logos.map((logo, index) => (
                  <div key={index} className="mx-6 sm:mx-8 flex items-center gap-2 font-bold text-base sm:text-xl text-gray-400">
@@ -141,12 +138,12 @@ export default async function Home() {
       <section id="features" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20">
-            <h2 className="text-sm font-bold text-indigo-600 uppercase tracking-widest mb-3">Potencia Real</h2>
+            <h2 className="text-sm font-bold text-indigo-600 uppercase tracking-widest mb-3">Herramienta Gerencial</h2>
             <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-6">
-              Todo lo que puedes hacer
+              Gestión para Dueños
             </h2>
             <p className="text-xl text-gray-500 max-w-3xl mx-auto">
-              Hemos simplificado las herramientas complejas para que tú solo te encargues de vender y cobrar.
+              Una plataforma diseñada para organizar tu casa por dentro: inventario real, cuentas claras y control de personal.
             </p>
           </div>
 
@@ -177,19 +174,19 @@ export default async function Home() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
           <div className="flex-1">
              <div className="inline-block px-4 py-1 mb-4 rounded-full bg-green-100 text-green-700 font-bold text-xs uppercase">
-               ¿Por qué elegirnos?
+               Orden Administrativo
              </div>
-             <h2 className="text-4xl font-bold text-gray-900 mb-6">Deja de perder dinero en mercancía perdida</h2>
+             <h2 className="text-4xl font-bold text-gray-900 mb-6">El control real de tu negocio</h2>
              <p className="text-lg text-gray-600 mb-8">
-               Nuestro sistema está diseñado para el comercio real: maneja múltiples monedas, controla los fiados y evita que vendas lo que no tienes en almacén.
+               Nuestro sistema es una herramienta puramente administrativa. No sustituye tus deberes formales, pero te da la visión clara que necesitas para administrar: qué tienes, qué debes y cuánto ganas realmente.
              </p>
              
              <ul className="space-y-4">
                {[
-                 "Control de Stock con alertas de existencia",
-                 "Cálculo automático de precios (Tasa BCV/Paralelo)",
-                 "Historial de deudas y abonos por cliente",
-                 "Soporte técnico directo vía WhatsApp"
+                 "Control de Inventario y Mermas (Uso Interno)",
+                 "Cálculo automático de precios referenciales",
+                 "Gestión de Cuentas por Cobrar y Pagar",
+                 "Sistema de Gestión Administrativa (No Fiscal)"
                ].map((item, i) => (
                  <li key={i} className="flex items-center gap-3">
                    <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
@@ -217,13 +214,12 @@ export default async function Home() {
 
         <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
           <h2 className="text-4xl md:text-5xl font-black text-white mb-6">
-            Empieza a optimizar tu negocio hoy
+            Mejora tu administración hoy mismo
           </h2>
           <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
-            Únete a los comercios que ya están ahorrando tiempo y dinero con nuestra plataforma.
+            Únete a los comercios que ya están organizando su inventario y cuentas de forma eficiente.
           </p>
 
-          {/* AQUÍ INTEGRADO EL COMPONENTE DE CLIENTE */}
           <ContactButtons />
 
           <div className="mt-16 pt-8 border-t border-white/10 flex flex-col items-center">

@@ -25,28 +25,29 @@ export async function POST(request: Request) {
           tasaBCV: tasaBCV || 0,
           metodoPagoId: metodoPagoId,
           comercioId: session.user.comercioId!,
-          fechaHora: new Date(),
+          // fechaHora: new Date(),  <--- BORRA ESTA LÍNEA
+          // Al borrarla, Prisma usará: (now() AT TIME ZONE 'America/Caracas')
         },
       });
 
       // Procesar productos y restar stock
       for (const p of productos) {
         await tx.ventaProducto.create({
-            data: {
-                ventaId: nuevaVenta.id,
-                productoId: p.id,
-                cantidad: p.cantidad,
-                peso: p.peso ? p.peso.toString() : null,
-                precioUnitario: p.precioUnitario,
-                precioUnitarioBs: p.precioUnitario * (tasaBCV || 0),
-            }
+          data: {
+            ventaId: nuevaVenta.id,
+            productoId: p.id,
+            cantidad: p.cantidad,
+            peso: p.peso ? p.peso.toString() : null,
+            precioUnitario: p.precioUnitario,
+            precioUnitarioBs: p.precioUnitario * (tasaBCV || 0),
+          }
         });
 
         // RESTAR STOCK
         const cantidadARestar = p.peso ? parseFloat(p.peso) : p.cantidad;
         await tx.producto.update({
-            where: { id: p.id },
-            data: { stock: { decrement: cantidadARestar } }
+          where: { id: p.id },
+          data: { stock: { decrement: cantidadARestar } }
         });
       }
 
