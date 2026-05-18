@@ -49,7 +49,7 @@ const TasaDolarBCV = () => {
         </div>
 
         {/* Valor principal */}
-        <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+        <div className="bg-white/10 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs text-blue-200 font-medium">PRECIO OFICIAL</div>

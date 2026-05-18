@@ -21,7 +21,7 @@ export default function ConfirmModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4 animate-in fade-in">
       <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 text-center">
         
         <div className="mx-auto h-12 w-12 rounded-full bg-red-100 flex items-center justify-center mb-4 text-red-600">

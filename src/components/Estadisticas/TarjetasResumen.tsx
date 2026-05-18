@@ -23,7 +23,7 @@ export default function TarjetasResumen({ estadisticas }: Props) {
                <h3 className="text-4xl font-bold tracking-tight">{estadisticas.totalVentas}</h3>
                <p className="text-indigo-200 text-xs mt-2 font-medium">Transacciones cerradas</p>
             </div>
-            <div className="p-3 bg-white/20 backdrop-blur-md rounded-xl">
+            <div className="p-3 bg-white/20 rounded-xl">
                <ShoppingBag size={24} className="text-white"/>
             </div>
          </div>

@@ -189,7 +189,7 @@ export default function GestionMetodosPago() {
 
       {/* MINI MODAL DE CONFIRMACIÓN */}
       {metodoAEliminar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 border border-gray-200 animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center">
               <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center mb-4 text-red-600">

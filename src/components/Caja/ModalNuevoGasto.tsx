@@ -34,7 +34,7 @@ export default function ModalNuevoGasto({ isOpen, onClose, onSuccess }: any) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in">
       <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 animate-in zoom-in-95">
         <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">

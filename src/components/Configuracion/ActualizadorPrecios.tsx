@@ -120,7 +120,7 @@ export default function ActualizadorPrecios() {
       <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[650px]">
         
         {/* Header FIJO (No se mueve al scrollear, evita el corte visual) */}
-        <div className="p-4 border-b border-gray-100 bg-gray-50/80 backdrop-blur-sm rounded-t-2xl z-10">
+        <div className="p-4 border-b border-gray-100 bg-gray-50/80 rounded-t-2xl z-10">
             <div className="flex flex-col sm:flex-row gap-3 justify-between items-center mb-3">
                 <div className="relative w-full sm:w-72">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
@@ -276,7 +276,7 @@ export default function ActualizadorPrecios() {
 
       {/* MODAL DE CONFIRMACIÓN */}
       {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in">
             <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[85vh]">
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                     <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">

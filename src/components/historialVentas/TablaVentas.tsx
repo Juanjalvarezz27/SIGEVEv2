@@ -254,14 +254,14 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
 
       {/* MODAL */}
       {modalOpen && ventaSeleccionada && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in">
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/60  p-4 animate-in fade-in">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[90vh]">
 
             <div className={`p-6 text-white text-center relative flex-shrink-0 ${ventaSeleccionada.deuda ? 'bg-gradient-to-br from-amber-500 to-orange-600' : 'bg-gradient-to-br from-indigo-600 to-blue-600'}`}>
               <button onClick={() => setModalOpen(false)} className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors">
                 <X size={20} />
               </button>
-              <div className="mx-auto w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mb-3 backdrop-blur-sm shadow-inner">
+              <div className="mx-auto w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mb-3 shadow-inner">
                 {ventaSeleccionada.deuda ? <FileText size={24}/> : <CheckCircle2 size={28} />}
               </div>
               <h3 className="text-xl font-bold tracking-tight">Nota de Entrega (NO FISCAL)</h3>

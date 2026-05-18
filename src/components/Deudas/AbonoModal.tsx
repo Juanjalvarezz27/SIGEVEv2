@@ -79,7 +79,7 @@ export default function AbonoModal({ isOpen, onClose, onConfirm, deudaTotal, abo
   };
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/60 p-4 animate-in fade-in">
       <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-6 relative animate-in zoom-in-95 duration-200">
         
         <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">

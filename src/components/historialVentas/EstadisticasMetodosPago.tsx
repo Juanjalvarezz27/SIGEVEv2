@@ -151,7 +151,7 @@ export default function EstadisticasMetodosPago({ ventas }: { ventas: Venta[] })
 
                {/* Badge de cantidad */}
                <div className="text-right">
-                  <span className="text-[10px] font-bold bg-white/80 px-2 py-1 rounded-lg shadow-sm border border-black/5 text-gray-600 backdrop-blur-sm">
+                  <span className="text-[10px] font-bold bg-white/80 px-2 py-1 rounded-lg shadow-sm border border-black/5 text-gray-600">
                     {data.count} ventas
                   </span>
                </div>
