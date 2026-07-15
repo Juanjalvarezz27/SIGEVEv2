@@ -44,8 +44,8 @@ export async function GET() {
       } : null
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error API Datos Usuario:", error);
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
   }
 }

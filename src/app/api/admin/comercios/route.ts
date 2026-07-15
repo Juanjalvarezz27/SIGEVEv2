@@ -29,8 +29,8 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json(comercios);
-  } catch (error) {
-    return NextResponse.json({ error: 'Error al cargar comercios' }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Error al cargar comercios' }, { status: 500 });
   }
 }
 
@@ -89,8 +89,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, comercio: nuevoComercio });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
   }
 }

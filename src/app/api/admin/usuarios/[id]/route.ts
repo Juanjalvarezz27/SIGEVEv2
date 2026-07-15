@@ -60,10 +60,10 @@ export async function PUT(request: Request, { params }: Params) {
         email: usuarioActualizado.email
     }});
 
-  } catch (error) {
+  } catch (error: any) {
     // ESTE LOG TE DIRÁ EXACTAMENTE QUÉ PASÓ EN LA CONSOLA DEL VSCODE
     console.error("❌ Error PUT Usuario:", error);
-    return NextResponse.json({ error: 'Error interno al actualizar' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error interno al actualizar' }, { status: 500 });
   }
 }
 
@@ -87,8 +87,8 @@ export async function DELETE(request: Request, { params }: Params) {
         await prisma.usuario.delete({ where: { id } });
 
         return NextResponse.json({ success: true });
-    } catch (error) {
+    } catch (error: any) {
         console.error("❌ Error DELETE Usuario:", error);
-        return NextResponse.json({ error: 'Error eliminando usuario' }, { status: 500 });
+        return NextResponse.json({ error: error.message || 'Error eliminando usuario' }, { status: 500 });
     }
 }

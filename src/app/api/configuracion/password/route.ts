@@ -31,7 +31,7 @@ export async function PUT(req: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
   }
 }

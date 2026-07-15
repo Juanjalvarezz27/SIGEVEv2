@@ -14,8 +14,8 @@ export async function GET() {
     });
 
     return NextResponse.json(metodos);
-  } catch (error) {
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
   }
 }
 
@@ -35,8 +35,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(nuevo);
-  } catch (error) {
-    return NextResponse.json({ error: 'Error creando método' }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Error creando método' }, { status: 500 });
   }
 }
 
@@ -59,8 +59,8 @@ export async function DELETE(req: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return NextResponse.json({ error: 'No se puede eliminar este método (tiene ventas asociadas)' }, { status: 400 });
+    return NextResponse.json({ error: error.message || 'No se puede eliminar este método (tiene ventas asociadas)' }, { status: 400 });
   }
 }

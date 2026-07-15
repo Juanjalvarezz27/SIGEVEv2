@@ -162,10 +162,7 @@ export async function GET(request: NextRequest) {
     console.error('Error obteniendo ventas detalladas:', error);
     
     if (error.message.includes('personalizado')) {
-      return NextResponse.json(
-        { error: 'Para período personalizado se requieren fechaInicio y fechaFin' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: error.message || 'Para período personalizado se requieren fechaInicio y fechaFin' }, { status: 400 });
     }
     
     return NextResponse.json(

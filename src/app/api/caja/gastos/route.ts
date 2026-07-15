@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(gasto);
-  } catch (error) {
-    return NextResponse.json({ error: 'Error creando gasto' }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Error creando gasto' }, { status: 500 });
   }
 }

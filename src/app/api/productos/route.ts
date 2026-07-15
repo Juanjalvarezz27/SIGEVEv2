@@ -59,9 +59,9 @@ export async function GET(request: Request) {
       },
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error al obtener productos:', error);
-    return NextResponse.json({ error: 'Error al obtener productos' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error al obtener productos' }, { status: 500 });
   }
 }
 
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
         });
 
         return NextResponse.json({ message: 'Creado', producto }, { status: 201 });
-    } catch (e) {
-        return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    } catch (e: any) {
+        return NextResponse.json({ error: e.message || 'Error interno' }, { status: 500 });
     }
 }

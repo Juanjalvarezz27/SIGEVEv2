@@ -71,9 +71,9 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
   }
 }
 
@@ -87,15 +87,12 @@ export async function DELETE(request: Request, { params }: Params) {
         const { id } = await params;
 
         await prisma.$transaction(async (tx) => {
-            // Borrar Pagos Históricos primero para evitar error de FK
-            await tx.pagoSuscripcion.deleteMany({ where: { comercioId: id } });
-            
-            await tx.usuario.deleteMany({ where: { comercioId: id } });
+            // Borrado en cascada automático por la base de datos (onDelete: Cascade)
             await tx.comercio.delete({ where: { id } });
         });
 
         return NextResponse.json({ success: true });
-    } catch (error) {
-        return NextResponse.json({ error: 'Error al eliminar' }, { status: 500 });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message || 'Error al eliminar' }, { status: 500 });
     }
 }

@@ -40,8 +40,8 @@ export async function GET(request: Request) {
     }));
 
     return NextResponse.json(usuariosSafe);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error API Usuarios:", error);
-    return NextResponse.json({ error: 'Error cargando usuarios' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error cargando usuarios' }, { status: 500 });
   }
 }

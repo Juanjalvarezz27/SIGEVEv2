@@ -39,8 +39,8 @@ export async function DELETE(request: Request, { params }: Params) {
 
     return NextResponse.json({ success: true, message: "Pago eliminado y tiempo revertido" });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return NextResponse.json({ error: 'Error al eliminar pago' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error al eliminar pago' }, { status: 500 });
   }
 }

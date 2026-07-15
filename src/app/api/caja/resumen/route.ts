@@ -60,8 +60,8 @@ export async function GET(req: Request) {
       gastosRecientes: gastos
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
   }
 }

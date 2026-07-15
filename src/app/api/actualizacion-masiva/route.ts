@@ -45,9 +45,9 @@ export async function GET(request: Request) {
     // Devolvemos el array directo para facilitar el consumo en el frontend
     return NextResponse.json(productos);
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error al obtener productos masivos:', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
   }
 }
 
@@ -114,8 +114,8 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({ success: true, message: `Actualizados ${ids.length} productos` });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return NextResponse.json({ error: "Error en actualización" }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error en actualización' }, { status: 500 });
   }
 }

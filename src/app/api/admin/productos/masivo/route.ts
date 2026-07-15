@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/src/lib/prisma';
 import { auth } from '@/src/auth';
+import { z } from 'zod';
+
+const productoSchema = z.object({
+  nombre: z.string().min(1, "El nombre no puede estar vacío"),
+  precio: z.coerce.number().positive("El precio debe ser mayor a 0"),
+  stock: z.coerce.number().min(0).default(0).catch(0),
+  porPeso: z.coerce.boolean().optional().default(false).catch(false)
+});
 
 export async function POST(request: Request) {
   try {
@@ -26,22 +34,19 @@ export async function POST(request: Request) {
     const errores: { nombre: string, motivo: string }[] = [];
 
     productos.forEach((p: any) => {
-        const nombreLimpio = p.nombre ? p.nombre.toString().trim() : "";
-        const precio = parseFloat(p.precio);
+        const result = productoSchema.safeParse(p);
 
-        // 1. Falta Nombre
-        if (!nombreLimpio) {
-            errores.push({ nombre: "Fila sin nombre", motivo: "El nombre es obligatorio" });
+        if (!result.success) {
+            const errMotivo = result.error.issues[0]?.message || "Datos inválidos";
+            const nombreMostrar = p.nombre ? String(p.nombre).trim() : "Fila sin nombre";
+            errores.push({ nombre: nombreMostrar, motivo: errMotivo });
             return;
         }
 
-        // 2. Falta Precio o es 0
-        if (isNaN(precio) || precio <= 0) {
-            errores.push({ nombre: nombreLimpio, motivo: "No tiene precio válido" });
-            return;
-        }
+        const { nombre, precio, stock, porPeso } = result.data;
+        const nombreLimpio = nombre.trim();
 
-        // 3. Duplicado
+        // Duplicado manual check
         if (nombresExistentes.has(nombreLimpio.toLowerCase())) {
             errores.push({ nombre: nombreLimpio, motivo: "Ya existe en tu inventario" });
             return;
@@ -49,9 +54,9 @@ export async function POST(request: Request) {
 
         validos.push({
             nombre: nombreLimpio,
-            precio: precio,
-            stock: parseFloat(p.stock) || 0,
-            porPeso: p.porPeso, 
+            precio,
+            stock,
+            porPeso, 
             comercioId: comercioId,
             activo: true
         });
@@ -70,8 +75,8 @@ export async function POST(request: Request) {
       detalles: errores 
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return NextResponse.json({ error: 'Error al procesar el archivo' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error al procesar el archivo' }, { status: 500 });
   }
 }

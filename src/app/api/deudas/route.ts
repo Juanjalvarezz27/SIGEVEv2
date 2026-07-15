@@ -17,7 +17,7 @@ async function obtenerTasaServer(): Promise<number> {
       const dataBackup = await resBackup.json();
       if (dataBackup?.promedio) return dataBackup.promedio;
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error obteniendo tasa:", error);
   }
   return TASA_POR_DEFECTO;
@@ -43,8 +43,8 @@ export async function GET(req: Request) {
       orderBy: { fecha: "desc" },
     });
     return NextResponse.json(deudas);
-  } catch (error) {
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
   }
 }
 
@@ -56,6 +56,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { tipo, persona, descripcion, monto, telefono, productos } = body;
     const montoFloat = parseFloat(monto);
+
+    if (montoFloat <= 0) return NextResponse.json({ error: "Monto inválido" }, { status: 400 });
 
     const resultado = await prisma.$transaction(async (tx) => {
         let deudaFinal;
@@ -76,7 +78,7 @@ export async function POST(req: Request) {
                 const detallesViejos = (deudaExistente.detalles as any[]) || [];
                 const nuevosConFecha = productos ? productos.map((p: any) => ({ ...p, fechaAgregado: new Date() })) : [];
                 const detallesFusionados = [...detallesViejos, ...nuevosConFecha];
-                const fechaHoy = new Date().toLocaleDateString('es-VE');
+                const fechaHoy = new Date().toLocaleDateString('es-VE', { timeZone: 'America/Caracas' });
                 const nuevaDescripcion = `${deudaExistente.descripcion || ''}\n\n--- Agregado el ${fechaHoy} ---\n${descripcion}`;
 
                 deudaFinal = await tx.deuda.update({
@@ -113,6 +115,12 @@ export async function POST(req: Request) {
         if (tipo === "COBRAR" && productos && productos.length > 0) {
             for (const p of productos) {
                 const cantidadDescontar = (p.porPeso && p.peso) ? parseFloat(p.peso) : p.cantidad;
+                if (cantidadDescontar <= 0) throw new Error("Cantidad inválida");
+                
+                // Asegurar que el producto pertenece al comercio
+                const prod = await tx.producto.findFirst({ where: { id: p.id, comercioId: session.user.comercioId! } });
+                if (!prod) throw new Error("Producto no encontrado o no pertenece al comercio");
+
                 await tx.producto.update({
                     where: { id: p.id },
                     data: { stock: { decrement: cantidadDescontar } }
@@ -125,9 +133,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json(resultado);
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return NextResponse.json({ error: "Error procesando" }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error procesando' }, { status: 500 });
   }
 }
 
@@ -141,15 +149,25 @@ export async function PUT(req: Request) {
     // 1. EDITAR DATOS
     if (body.accion === "EDITAR") {
       const { id, persona, descripcion, monto, telefono, productos } = body;
+      const montoF = parseFloat(monto);
+      if (montoF <= 0) return NextResponse.json({ error: "Monto inválido" }, { status: 400 });
+
+      // Validar pertenencia
+      const existe = await prisma.deuda.findFirst({ where: { id, comercioId: session.user.comercioId! }});
+      if (!existe) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
+
       return NextResponse.json(await prisma.deuda.update({
         where: { id },
-        data: { persona, descripcion, monto: parseFloat(monto), telefono, detalles: productos }
+        data: { persona, descripcion, monto: montoF, telefono, detalles: productos }
       }));
     }
 
     // 2. ABONAR
     const { id, abono, metodoPagoId, crearGasto } = body;
-    const deuda = await prisma.deuda.findUnique({ where: { id } });
+    const abonoF = parseFloat(abono);
+    if (abonoF <= 0) return NextResponse.json({ error: "Abono inválido" }, { status: 400 });
+
+    const deuda = await prisma.deuda.findFirst({ where: { id, comercioId: session.user.comercioId! } });
     if (!deuda) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
 
     const nuevoAbonado = deuda.abonado + parseFloat(abono);
@@ -205,9 +223,9 @@ export async function PUT(req: Request) {
     });
 
     return NextResponse.json(resultado);
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return NextResponse.json({ error: "Error" }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error' }, { status: 500 });
   }
 }
 
@@ -230,5 +248,5 @@ export async function DELETE(req: Request) {
 
     await prisma.deuda.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch (e) { return NextResponse.json({ error: "Error" }, { status: 500 }); }
+  } catch (e: any) { return NextResponse.json({ error: e.message || 'Error' }, { status: 500 }); }
 }

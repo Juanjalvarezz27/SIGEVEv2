@@ -11,22 +11,33 @@ export async function PUT(request: Request, { params }: Params) {
         const session = await auth();
         if (!session?.user?.comercioId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-        const { id } = await params;
-        const body = await request.json();
-        const { nombre, precio, porPeso, stock } = body;
+    const { id } = await params;
+    const body = await request.json();
+    const { nombre, precio, porPeso, stock } = body;
 
-        const actualizado = await prisma.producto.update({
-            where: { id },
-            data: {
-                nombre: nombre.trim(),
-                precio: parseFloat(precio),
-                porPeso: porPeso ? true : null,
-                stock: parseFloat(stock) || 0,
-            },
-        });
-        return NextResponse.json({ message: 'Actualizado', producto: actualizado });
-    } catch (error) {
-        return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    // VALIDACIÓN IDOR: El producto debe existir y pertenecer al comercio de la sesión
+    const productoExistente = await prisma.producto.findFirst({
+        where: { id, comercioId: session.user.comercioId! }
+    });
+    if (!productoExistente) return NextResponse.json({ error: 'No autorizado o no encontrado' }, { status: 403 });
+
+    // VALIDACIÓN NEGATIVOS
+    const nuevoPrecio = parseFloat(precio);
+    const nuevoStock = parseFloat(stock) || 0;
+    if (nuevoPrecio < 0 || nuevoStock < 0) return NextResponse.json({ error: 'Valores negativos no permitidos' }, { status: 400 });
+
+    const actualizado = await prisma.producto.update({
+        where: { id },
+        data: {
+            nombre: nombre.trim(),
+            precio: nuevoPrecio,
+            porPeso: porPeso ? true : null,
+            stock: nuevoStock,
+        },
+    });
+    return NextResponse.json({ message: 'Actualizado', producto: actualizado });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
     }
 }
 
@@ -37,6 +48,12 @@ export async function DELETE(request: Request, { params }: Params) {
     if (!session?.user?.comercioId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
     const { id } = await params;
+
+    // VALIDACIÓN IDOR: El producto debe existir y pertenecer al comercio de la sesión
+    const productoExistente = await prisma.producto.findFirst({
+        where: { id, comercioId: session.user.comercioId! }
+    });
+    if (!productoExistente) return NextResponse.json({ error: 'No autorizado o no encontrado' }, { status: 403 });
 
     // 1. Verificar si tiene ventas asociadas
     const ventas = await prisma.ventaProducto.findFirst({
@@ -55,8 +72,8 @@ export async function DELETE(request: Request, { params }: Params) {
       return NextResponse.json({ message: 'Producto eliminado permanentemente' });
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
   }
 }

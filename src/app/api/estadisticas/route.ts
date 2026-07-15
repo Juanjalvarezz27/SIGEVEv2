@@ -108,8 +108,8 @@ export async function GET(request: NextRequest) {
       const fechas = obtenerFechasPeriodo(periodo, fecha || undefined);
       startDate = fechas.startDate;
       endDate = fechas.endDate;
-    } catch (error) {
-      return NextResponse.json({ error: 'Error procesando fechas' }, { status: 400 });
+    } catch (error: any) {
+      return NextResponse.json({ error: error.message || 'Error procesando fechas' }, { status: 400 });
     }
 
     const ventas = await prisma.venta.findMany({
@@ -233,8 +233,8 @@ export async function GET(request: NextRequest) {
       ventasDetalladas: ventas.reverse(),
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
   }
 }

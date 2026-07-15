@@ -56,7 +56,7 @@ model PagoSuscripcion {
   meses       Int?     @default(1)
   
   comercioId  String
-  comercio    Comercio @relation(fields: [comercioId], references: [id])
+  comercio    Comercio @relation(fields: [comercioId], references: [id], onDelete: Cascade)
 }
 
 model Usuario {
@@ -69,7 +69,7 @@ model Usuario {
   rol        Rol     @relation(fields: [rolId], references: [id])
 
   comercioId String?
-  comercio   Comercio? @relation(fields: [comercioId], references: [id])
+  comercio   Comercio? @relation(fields: [comercioId], references: [id], onDelete: Cascade)
 }
 
 model Producto {
@@ -82,7 +82,7 @@ model Producto {
   activo      Boolean  @default(true)
 
   comercioId  String
-  comercio    Comercio @relation(fields: [comercioId], references: [id])
+  comercio    Comercio @relation(fields: [comercioId], references: [id], onDelete: Cascade)
   ventas      VentaProducto[]
 
   @@index([comercioId])
@@ -93,13 +93,13 @@ model Venta {
   total        Float
   totalBs      Float
   tasaBCV      Float
-  fechaHora    DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')"))
+  fechaHora    DateTime @default(now())
 
   metodoPagoId String
-  metodoPago   MetodosPago @relation(fields: [metodoPagoId], references: [id])
+  metodoPago   MetodosPago @relation(fields: [metodoPagoId], references: [id], onDelete: Restrict)
 
   comercioId   String
-  comercio     Comercio @relation(fields: [comercioId], references: [id])
+  comercio     Comercio @relation(fields: [comercioId], references: [id], onDelete: Cascade)
 
   productos    VentaProducto[]
   deudaId      String? @unique
@@ -118,7 +118,7 @@ model VentaProducto {
   ventaId    String
   venta      Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
   productoId String
-  producto   Producto @relation(fields: [productoId], references: [id])
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Restrict)
 
   @@unique([ventaId, productoId])
 }
@@ -127,7 +127,7 @@ model MetodosPago {
   id         String   @id @default(uuid())
   nombre     String
   comercioId String
-  comercio   Comercio @relation(fields: [comercioId], references: [id])
+  comercio   Comercio @relation(fields: [comercioId], references: [id], onDelete: Cascade)
   ventas     Venta[]
 
   @@index([comercioId])
@@ -142,13 +142,13 @@ model Deuda {
   monto       Float
   abonado     Float    @default(0)
   estado      String   @default("PENDIENTE")
-  fecha       DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')"))
+  fecha       DateTime @default(now())
   telefono    String?
   fechaPago   DateTime?
   
   venta       Venta?
   comercioId  String
-  comercio    Comercio @relation(fields: [comercioId], references: [id])
+  comercio    Comercio @relation(fields: [comercioId], references: [id], onDelete: Cascade)
 
   @@index([comercioId])
 }
@@ -157,17 +157,17 @@ model Gasto {
   id          String   @id @default(uuid())
   descripcion String
   monto       Float
-  fecha       DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')"))
+  fecha       DateTime @default(now())
 
   comercioId  String
-  comercio    Comercio @relation(fields: [comercioId], references: [id])
+  comercio    Comercio @relation(fields: [comercioId], references: [id], onDelete: Cascade)
 
   @@index([comercioId])
 }
 
 model CierreCaja {
   id           String   @id @default(uuid())
-  fecha        DateTime @default(dbgenerated("(now() AT TIME ZONE 'America/Caracas')"))
+  fecha        DateTime @default(now())
   totalVentas  Float
   totalGastos  Float
   totalSistema Float
@@ -177,7 +177,7 @@ model CierreCaja {
   notas        String?
 
   comercioId   String
-  comercio     Comercio @relation(fields: [comercioId], references: [id])
+  comercio     Comercio @relation(fields: [comercioId], references: [id], onDelete: Cascade)
 
   @@index([comercioId])
 }

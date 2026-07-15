@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
+import useSWR from 'swr';
 import { Package, Edit2, Trash2, Plus, Loader2, ChevronLeft, ChevronRight, Boxes, FileSpreadsheet } from 'lucide-react';
 import useTasaBCV from '../../app/hooks/useTasaBCV';
 import ModalConfirmacion from './ModalConfirmacion';
@@ -20,9 +21,11 @@ interface Producto {
 
 const ITEMS_PER_PAGE = 30;
 
+const fetcher = (url: string) => fetch(url).then(res => res.json()).then(data => Array.isArray(data.productos) ? data.productos : []);
+
 const ProductosList = () => {
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [loadingProductos, setLoadingProductos] = useState(true);
+  const { data: productos = [], isLoading: loadingProductos, mutate } = useSWR('/api/productos?limit=1000', fetcher);
+
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
 
   const [productoAEliminar, setProductoAEliminar] = useState<Producto | null>(null);
@@ -65,23 +68,7 @@ const ProductosList = () => {
     return productosProcesados.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [productosProcesados, currentPage]);
 
-  // --- Carga Inicial ---
-  useEffect(() => { fetchProductos(); }, []);
 
-  const fetchProductos = async () => {
-    try {
-      setLoadingProductos(true);
-      const response = await fetch('/api/productos?limit=1000'); 
-      if (!response.ok) throw new Error('Error al cargar');
-      const data = await response.json();
-      const lista = Array.isArray(data.productos) ? data.productos : [];
-      setProductos(lista);
-    } catch (err) {
-      toast.error('Error cargando inventario');
-    } finally {
-      setLoadingProductos(false);
-    }
-  };
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -92,12 +79,12 @@ const ProductosList = () => {
 
   // --- Handlers de Acciones ---
   const handleProductoCreado = (nuevoProducto: Producto) => {
-    setProductos(prev => [...prev, nuevoProducto]);
+    mutate(); // SWR se encarga de revalidar el caché
     setMostrarAgregarModal(false);
   };
 
   const handleImportacionExitosa = () => {
-      fetchProductos();
+      mutate();
       setMostrarImportar(false);
   };
 
@@ -108,7 +95,7 @@ const ProductosList = () => {
       const res = await fetch(`/api/productos/${productoAEliminar.id}`, { method: 'DELETE' });
       if (res.ok) {
         toast.success('Producto eliminado');
-        setProductos(prev => prev.filter(p => p.id !== productoAEliminar.id));
+        mutate();
         setProductoAEliminar(null);
       } else {
         const data = await res.json();
@@ -128,7 +115,7 @@ const ProductosList = () => {
 
       if (res.ok) {
         toast.success('Producto actualizado');
-        setProductos(prev => prev.map(p => p.id === id ? { ...p, nombre, precio, porPeso, stock } : p));
+        mutate();
         setProductoAEditar(null);
       } else {
         const data = await res.json();
