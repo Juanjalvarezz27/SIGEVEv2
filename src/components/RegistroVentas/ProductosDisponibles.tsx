@@ -78,6 +78,7 @@ export default function ProductosDisponibles({
         <div className="relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={20}/>
           <input
+            data-testid="pos-search-input"
             className="w-full pl-12 pr-10 py-3.5 rounded-xl border border-gray-300 bg-white outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium text-gray-700 placeholder:text-gray-400 text-sm shadow-sm"
             placeholder="Buscar producto por nombre..."
             value={busquedaProducto}
@@ -113,6 +114,7 @@ export default function ProductosDisponibles({
 
               return (
                 <button
+                  data-testid="add-to-cart-btn"
                   key={prod.id}
                   onClick={() => agregarProducto(prod)}
                   className={`

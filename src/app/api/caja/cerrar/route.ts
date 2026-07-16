@@ -20,19 +20,21 @@ export async function POST(req: Request) {
 
     const fechaInicio = ultimoCierre ? ultimoCierre.fecha : new Date(0);
 
-    // 2. Traer VENTAS genuinas desde la BD
-    const ventas = await prisma.venta.findMany({
-      where: { comercioId, fechaHora: { gt: fechaInicio } }
+    // 2. Traer VENTAS genuinas desde la BD (Cálculo directo en BD)
+    const ventasAgregadas = await prisma.venta.aggregate({
+      where: { comercioId, fechaHora: { gt: fechaInicio } },
+      _sum: { total: true }
     });
 
-    // 3. Traer GASTOS genuinos desde la BD
-    const gastos = await prisma.gasto.findMany({
-      where: { comercioId, fecha: { gt: fechaInicio } }
+    // 3. Traer GASTOS genuinos desde la BD (Cálculo directo en BD)
+    const gastosAgregados = await prisma.gasto.aggregate({
+      where: { comercioId, fecha: { gt: fechaInicio } },
+      _sum: { monto: true }
     });
 
     // 4. Calcular totales matemáticamente seguros
-    const totalVentas = ventas.reduce((sum, v) => sum + v.total, 0);
-    const totalGastos = gastos.reduce((sum, g) => sum + g.monto, 0);
+    const totalVentas = ventasAgregadas._sum.total || 0;
+    const totalGastos = gastosAgregados._sum.monto || 0;
     const totalSistema = totalVentas - totalGastos;
     const diferencia = totalReal - totalSistema;
 
