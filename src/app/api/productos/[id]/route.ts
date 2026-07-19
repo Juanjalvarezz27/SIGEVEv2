@@ -13,7 +13,7 @@ export async function PUT(request: Request, { params }: Params) {
 
     const { id } = await params;
     const body = await request.json();
-    const { nombre, precio, porPeso, stock } = body;
+    const { nombre, precio, porPeso, stock, unidad, cantidadBase } = body;
 
     // VALIDACIÓN IDOR: El producto debe existir y pertenecer al comercio de la sesión
     const productoExistente = await prisma.producto.findFirst({
@@ -32,6 +32,8 @@ export async function PUT(request: Request, { params }: Params) {
             nombre: nombre.trim(),
             precio: nuevoPrecio,
             porPeso: porPeso ? true : null,
+            unidad: porPeso ? (unidad || 'kg') : null,
+            cantidadBase: cantidadBase ? parseFloat(cantidadBase) : null,
             stock: nuevoStock,
         },
     });

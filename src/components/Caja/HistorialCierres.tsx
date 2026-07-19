@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, Fragment } from 'react';
-import { History, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, Calendar, ChevronDown, ChevronUp, StickyNote, MessageSquare } from 'lucide-react';
+import { History, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, Calendar, ChevronDown, ChevronUp, StickyNote, MessageSquare, Loader2 } from 'lucide-react';
 
 export default function HistorialCierres({ recargarTrigger }: { recargarTrigger: number }) {
   const [cierres, setCierres] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [seccionAbierta, setSeccionAbierta] = useState(false);
   
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -29,8 +30,10 @@ export default function HistorialCierres({ recargarTrigger }: { recargarTrigger:
   };
 
   useEffect(() => {
-    cargarHistorial();
-  }, [page, recargarTrigger]);
+    if (seccionAbierta) {
+      cargarHistorial();
+    }
+  }, [page, recargarTrigger, seccionAbierta]);
 
   const toggleExpand = (id: string) => {
     setExpandedId(current => current === id ? null : id);
@@ -38,15 +41,32 @@ export default function HistorialCierres({ recargarTrigger }: { recargarTrigger:
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mt-8">
-      <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-        <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
-          <History className="text-gray-400" size={20}/> Historial de Cierres
-        </h3>
-        <span className="text-xs font-medium text-gray-500">
-          Página {page} de {totalPages || 1}
-        </span>
+      <div 
+        onClick={() => setSeccionAbierta(!seccionAbierta)}
+        className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 cursor-pointer hover:bg-gray-100 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+            <History className="text-indigo-500" size={22}/> Historial de Cierres
+          </h3>
+        </div>
+        <div className="flex items-center gap-2">
+            {seccionAbierta && (
+                <span className="text-xs font-medium text-gray-500 bg-white px-3 py-1.5 rounded-full shadow-sm border border-gray-200 hidden sm:block">
+                Página {page} de {totalPages || 1}
+                </span>
+            )}
+            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full uppercase flex items-center gap-1 transition-colors hover:bg-indigo-100">
+            {seccionAbierta ? 'Ocultar' : 'Ver'}
+            {seccionAbierta ? <ChevronUp size={14} className="text-indigo-600"/> : <ChevronDown size={14} className="text-indigo-600"/>}
+            </span>
+        </div>
       </div>
 
+      <div 
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${seccionAbierta ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
+      >
+        <div className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           {/* HEAD SIN COMENTARIOS NI ESPACIOS EXTRAÑOS */}
@@ -63,7 +83,7 @@ export default function HistorialCierres({ recargarTrigger }: { recargarTrigger:
           
           <tbody className="divide-y divide-gray-100">
             {loading ? (
-               <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-400">Cargando historial...</td></tr>
+               <tr><td colSpan={6} className="px-6 py-12"><div className="flex justify-center"><Loader2 className="animate-spin text-indigo-500 w-8 h-8"/></div></td></tr>
             ) : cierres.length === 0 ? (
                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-400">No hay cierres registrados aún.</td></tr>
             ) : (
@@ -173,6 +193,8 @@ export default function HistorialCierres({ recargarTrigger }: { recargarTrigger:
            </button>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

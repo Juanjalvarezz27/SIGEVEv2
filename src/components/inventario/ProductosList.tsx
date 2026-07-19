@@ -21,12 +21,36 @@ interface Producto {
 
 const ITEMS_PER_PAGE = 30;
 
-const fetcher = (url: string) => fetch(url).then(res => res.json()).then(data => Array.isArray(data.productos) ? data.productos : []);
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 const ProductosList = () => {
-  const { data: productos = [], isLoading: loadingProductos, mutate } = useSWR('/api/productos?limit=1000', fetcher);
-
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
+  const [debouncedBusqueda, setDebouncedBusqueda] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  // Debounce para la búsqueda
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedBusqueda(terminoBusqueda);
+      setCurrentPage(1); // Reiniciar a la primera página al buscar
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [terminoBusqueda]);
+
+  // Hook SWR dinámico
+  const { data, isLoading: loadingProductos, mutate } = useSWR(
+    `/api/productos?limit=${ITEMS_PER_PAGE}&page=${currentPage}&search=${encodeURIComponent(debouncedBusqueda)}`, 
+    fetcher
+  );
+
+  const productos: Producto[] = data?.productos || [];
+  const pagination = data?.pagination || { total: 0, totalPages: 1, hasNextPage: false, hasPrevPage: false };
+
+  const totalItems = pagination.total;
+  const totalPages = pagination.totalPages;
+  const hasNextPage = pagination.hasNextPage;
+  const hasPrevPage = pagination.hasPrevPage;
 
   const [productoAEliminar, setProductoAEliminar] = useState<Producto | null>(null);
   const [productoAEditar, setProductoAEditar] = useState<Producto | null>(null);
@@ -40,35 +64,6 @@ const ProductosList = () => {
   const [editando, setEditando] = useState(false);
 
   const { tasa } = useTasaBCV();
-  const [currentPage, setCurrentPage] = useState(1);
-  const tableContainerRef = useRef<HTMLDivElement>(null);
-
-  // --- Filtrado y Ordenamiento en Cliente ---
-  const productosProcesados = useMemo(() => {
-    let resultado = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
-    if (terminoBusqueda.trim()) {
-      resultado = resultado.filter(p =>
-        p.nombre.toLowerCase().includes(terminoBusqueda.toLowerCase().trim())
-      );
-    }
-    return resultado;
-  }, [productos, terminoBusqueda]);
-
-  // --- Paginación en Cliente ---
-  const totalItems = productosProcesados.length;
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-  const hasNextPage = currentPage < totalPages;
-  const hasPrevPage = currentPage > 1;
-
-  useEffect(() => { setCurrentPage(1); }, [terminoBusqueda]);
-  useEffect(() => { if (currentPage > totalPages && totalPages > 0) setCurrentPage(1); }, [totalPages, currentPage]);
-
-  const currentProducts = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return productosProcesados.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [productosProcesados, currentPage]);
-
-
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -104,13 +99,13 @@ const ProductosList = () => {
     } catch (e) { toast.error('Error de conexión'); } finally { setEliminando(false); }
   };
 
-  const handleEditarProducto = async (id: string, nombre: string, precio: number, porPeso: boolean | null, stock: number) => {
+  const handleEditarProducto = async (id: string, nombre: string, precio: number, porPeso: boolean | null, stock: number, unidad?: string | null, cantidadBase?: number | null) => {
     try {
       setEditando(true);
       const res = await fetch(`/api/productos/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, precio, porPeso, stock }),
+        body: JSON.stringify({ nombre, precio, porPeso, stock, unidad, cantidadBase }),
       });
 
       if (res.ok) {
@@ -182,7 +177,7 @@ const ProductosList = () => {
                 terminoBusqueda={terminoBusqueda}
                 onBuscarChange={setTerminoBusqueda}
                 onLimpiarBusqueda={() => setTerminoBusqueda('')}
-                resultados={currentProducts.length}
+                resultados={productos.length}
                 total={totalItems}
                 paginaActual={currentPage}
                 totalPaginas={totalPages}
@@ -224,10 +219,10 @@ const ProductosList = () => {
             <tbody className="divide-y-0 md:divide-y divide-gray-200 block md:table-row-group">
               {loadingProductos ? (
                 <tr><td colSpan={5} className="text-center py-10 block md:table-cell"><Loader2 className="animate-spin h-8 w-8 text-indigo-500 mx-auto"/></td></tr>
-              ) : currentProducts.length === 0 ? (
+              ) : productos.length === 0 ? (
                 <tr><td colSpan={5} className="text-center py-10 text-gray-500 block md:table-cell">No hay productos.</td></tr>
               ) : (
-                currentProducts.map((p) => (
+                productos.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50 block md:table-row border border-gray-200 md:border-0 rounded-xl md:rounded-none mb-4 md:mb-0 p-4 md:p-0 bg-white">
                     <td className="px-0 md:px-6 py-2 md:py-4 flex flex-col md:table-cell border-b md:border-0 border-gray-100 pb-3 md:pb-4 min-w-[150px]">
                       <span className="md:hidden font-bold text-gray-400 text-xs uppercase mb-1">Producto</span>

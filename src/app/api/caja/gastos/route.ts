@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     const session = await auth();
     if (!session?.user?.comercioId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-    const { descripcion, monto } = await req.json();
+    const { descripcion, monto, montoBs, tasaBCV } = await req.json();
 
     if (!descripcion || !monto) return NextResponse.json({ error: 'Faltan datos' }, { status: 400 });
 
@@ -15,6 +15,8 @@ export async function POST(req: Request) {
       data: {
         descripcion,
         monto: parseFloat(monto),
+        montoBs: montoBs ? parseFloat(montoBs) : null,
+        tasaBCV: tasaBCV ? parseFloat(tasaBCV) : null,
         comercioId: session.user.comercioId,
         fecha: new Date() // Hora UTC exacta
       }

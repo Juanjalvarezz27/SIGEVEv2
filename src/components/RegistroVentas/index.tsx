@@ -13,6 +13,8 @@ interface Producto {
   nombre: string;
   precio: number;
   porPeso?: boolean | null;
+  unidad?: string | null;
+  cantidadBase?: number | null;
   stock: number;
 }
 
@@ -36,85 +38,68 @@ interface PaginationData {
   hasPrevPage: boolean;
 }
 
-// --- UTILIDAD DEBOUNCE ---
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
+import useSWR from 'swr';
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function VentasPage() {
-  const [productos, setProductos] = useState<Producto[]>([]);
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
   const [productosSeleccionados, setProductosSeleccionados] = useState<ProductoSeleccionado[]>([]);
   const [metodoPagoId, setMetodoPagoId] = useState<string>('');
+  
+  const [referencia, setReferencia] = useState('');
+  
   const [busquedaProducto, setBusquedaProducto] = useState('');
+  const [debouncedBusqueda, setDebouncedBusqueda] = useState('');
   const [cargando, setCargando] = useState(false);
-  const [cargandoProductos, setCargandoProductos] = useState(false);
-
-  const [pagination, setPagination] = useState<PaginationData>({
-    page: 1, limit: 20, total: 0, totalPages: 1, hasNextPage: false, hasPrevPage: false,
-  });
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
   const { tasa, loading: loadingTasa } = useTasaBCV();
 
-  // --- CARGA DE PRODUCTOS (Debounce) ---
-  const cargarProductosRef = useRef(
-    debounce(async (search: string, page: number) => {
-      try {
-        setCargandoProductos(true);
-        const queryParams = new URLSearchParams({
-          page: page.toString(),
-          limit: pagination.limit.toString(),
-          soloDisponibles: 'true', // Filtramos stock > 0
-          ...(search && { search }),
-        });
+  // Debounce para búsqueda
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedBusqueda(busquedaProducto);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [busquedaProducto]);
 
-        const response = await fetch(`/api/productos?${queryParams}`);
-        const data = await response.json();
-
-        if (response.ok) {
-          setProductos(data.productos);
-          setPagination(data.pagination);
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setCargandoProductos(false);
-      }
-    }, 500)
+  // SWR para productos (auto revalidación)
+  const { data: respProd, mutate: recargarProductos, isLoading: cargandoProductos } = useSWR(
+    `/api/productos?page=${page}&limit=${limit}&search=${encodeURIComponent(debouncedBusqueda)}`,
+    fetcher,
+    { revalidateOnFocus: false }
   );
 
+  const productos: Producto[] = respProd?.productos || [];
+  const pagination: PaginationData = respProd?.pagination || { page: 1, limit: 20, total: 0, totalPages: 1, hasNextPage: false, hasPrevPage: false };
+
+  // --- CARGAR MÉTODOS DE PAGO (Una sola vez) ---
   useEffect(() => {
-    cargarMetodosPago();
+    fetch('/api/metodos-pago')
+      .then((res) => res.json())
+      .then((data) => setMetodosPago(data))
+      .catch((err) => console.error(err));
   }, []);
 
-  useEffect(() => {
-    cargarProductosRef.current(busquedaProducto, pagination.page);
-  }, [busquedaProducto, pagination.page]);
-
-  const cargarMetodosPago = async () => {
-    try {
-      const res = await fetch('/api/metodos-pago');
-      const data = await res.json();
-      setMetodosPago(data);
-    } catch (e) { console.error(e); }
-  };
-
-  // --- MANEJO DEL CARRITO ---
+  // CORRECCIÓN REACT: Validación separada de la actualización
   const agregarProducto = (producto: Producto) => {
     const existe = productosSeleccionados.find(p => p.id === producto.id);
     
-    // Validación de stock antes de agregar
-    if (!producto.porPeso) {
-        const cantidadActual = existe ? existe.cantidad : 0;
-        if (cantidadActual + 1 > producto.stock) {
-            toast.warning(`Stock límite: ${producto.stock} unidades`);
+    // Si ya existe, comprobamos si añadir 1 excede stock
+    if (existe && !producto.porPeso) {
+        if (existe.cantidad + 1 > producto.stock) {
+            toast.warning(`No puedes agregar más de ${producto.stock}`);
+            return;
+        }
+    }
+
+    // Si es nuevo y stock < 1, validamos
+    if (!existe && !producto.porPeso) {
+        if (producto.stock < 1) {
+            toast.warning('No hay stock disponible');
             return;
         }
     }
@@ -123,14 +108,14 @@ export default function VentasPage() {
       setProductosSeleccionados(prev => prev.map(p => p.id === producto.id ? {
         ...p,
         cantidad: producto.porPeso ? p.cantidad : p.cantidad + 1,
-        subtotal: producto.porPeso ? (p.peso || 0.001) * p.precio : (p.cantidad + 1) * p.precio
+        subtotal: producto.porPeso ? ((p.peso || 0.001) / (producto.cantidadBase || 1)) * p.precio : (p.cantidad + 1) * p.precio
       } : p));
     } else {
       setProductosSeleccionados(prev => [...prev, {
         ...producto,
         cantidad: 1,
         peso: producto.porPeso ? 1.000 : undefined,
-        subtotal: producto.porPeso ? 1.000 * producto.precio : producto.precio
+        subtotal: producto.porPeso ? (1.000 / (producto.cantidadBase || 1)) * producto.precio : producto.precio
       }]);
     }
     toast.success(`${producto.nombre} agregado`, { position: "bottom-right", autoClose: 1000 });
@@ -164,14 +149,14 @@ export default function VentasPage() {
     if (!producto) return;
 
     if (nuevoPeso > producto.stock) {
-        toast.warning(`Stock insuficiente (${producto.stock}kg)`);
-        // Opcional: Podrías retornar aquí si quieres bloquear estrictamente
+        toast.warning(`Solo tienes ${producto.stock} kg disponibles`);
+        // Opcional: Podrías revertir el input si quieres, pero en CarritoVenta ya tienes un input suelto, así que solo validamos al setear.
         // return; 
     }
 
     setProductosSeleccionados(prev => prev.map(p => 
         p.id === id 
-        ? { ...p, peso: nuevoPeso, subtotal: nuevoPeso * p.precio } 
+        ? { ...p, peso: nuevoPeso, subtotal: (nuevoPeso / (p.cantidadBase || 1)) * p.precio } 
         : p
     ));
   };
@@ -187,7 +172,7 @@ export default function VentasPage() {
   const calcularTotal = () => productosSeleccionados.reduce((acc, p) => acc + p.subtotal, 0);
 
   const cambiarPagina = (pag: number) => {
-    if (pag >= 1 && pag <= pagination.totalPages) setPagination(prev => ({ ...prev, page: pag }));
+    if (pag >= 1 && pag <= pagination.totalPages) setPage(pag);
   };
 
   const limpiarBusqueda = () => setBusquedaProducto('');
@@ -195,6 +180,7 @@ export default function VentasPage() {
   const limpiarCarrito = () => {
     setProductosSeleccionados([]);
     setMetodoPagoId('');
+    setReferencia('');
     setBusquedaProducto('');
   };
 
@@ -222,6 +208,7 @@ export default function VentasPage() {
           precioUnitario: p.precio
         })),
         metodoPagoId,
+        referencia: referencia || null,
         total: calcularTotal(),
         tasaBCV: tasa
       };
@@ -236,8 +223,8 @@ export default function VentasPage() {
       if (res.ok) {
         toast.success('¡Venta registrada!');
         limpiarCarrito();
-        // Recargar productos para actualizar stock visualmente
-        cargarProductosRef.current(busquedaProducto, pagination.page);
+        // Recargar productos para actualizar stock visualmente usando SWR
+        recargarProductos();
       } else {
         toast.error(data.error || 'Error');
       }
@@ -246,7 +233,7 @@ export default function VentasPage() {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto min-h-screen pb-24 md:pb-6">
+    <div className="w-full max-w-full mx-auto min-h-screen pb-24 md:pb-6">
       <HeaderVentas total={calcularTotal()} productosCount={productosSeleccionados.length} tasaBCV={tasa} loadingTasa={loadingTasa} />
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
@@ -265,7 +252,7 @@ export default function VentasPage() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="sticky top-6 space-y-6">
+          <div className="sticky top-6 h-[calc(100vh-48px)] flex flex-col">
             <CarritoVenta
               productosSeleccionados={productosSeleccionados}
               incrementarCantidad={incrementarCantidad}
@@ -276,6 +263,8 @@ export default function VentasPage() {
               metodosPago={metodosPago}
               metodoPagoId={metodoPagoId}
               setMetodoPagoId={setMetodoPagoId}
+              referencia={referencia}
+              setReferencia={setReferencia}
               registrarVenta={registrarVenta}
               cargando={cargando}
               tasaBCV={tasa}

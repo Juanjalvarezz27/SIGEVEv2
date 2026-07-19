@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, Trash2, Loader2, AlertTriangle, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
@@ -22,8 +22,15 @@ export default function TablaPagos({ dataInicial }: { dataInicial: Pago[] }) {
   
   // Estado para el Modal
   const [pagoAEliminar, setPagoAEliminar] = useState<{id: string, meses: number | null} | null>(null);
+  const [confirmText, setConfirmText] = useState("");
   
   const router = useRouter();
+
+  useEffect(() => {
+    if (pagoAEliminar) {
+      setConfirmText("");
+    }
+  }, [pagoAEliminar]);
 
   // 1. Abrir Modal
   const handleClickEliminar = (id: string, meses: number | null) => {
@@ -164,6 +171,18 @@ export default function TablaPagos({ dataInicial }: { dataInicial: Pago[] }) {
                       Este pago no tiene tiempo asociado, solo se borrará el dinero.
                    </div>
                 )}
+
+
+                <div className="text-left mt-2">
+                   <label className="block text-xs font-bold text-gray-500 mb-2">Escribe <span className="text-red-500 select-all">ELIMINAR</span> para confirmar:</label>
+                   <input 
+                     type="text"
+                     value={confirmText}
+                     onChange={(e) => setConfirmText(e.target.value)}
+                     className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-red-500 focus:ring-4 focus:ring-red-100 outline-none transition-all font-bold text-gray-700 uppercase"
+                     placeholder="ELIMINAR"
+                   />
+                </div>
             </div>
 
             {/* Footer Actions */}
@@ -177,8 +196,8 @@ export default function TablaPagos({ dataInicial }: { dataInicial: Pago[] }) {
                 </button>
                 <button 
                     onClick={confirmarEliminacion} 
-                    disabled={loadingId === pagoAEliminar.id}
-                    className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-lg shadow-red-200 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
+                    disabled={loadingId === pagoAEliminar.id || confirmText.toUpperCase() !== 'ELIMINAR'}
+                    className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-lg shadow-red-200 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {loadingId === pagoAEliminar.id ? <Loader2 className="animate-spin" size={16}/> : <><Trash2 size={16}/> Eliminar</>}
                 </button>

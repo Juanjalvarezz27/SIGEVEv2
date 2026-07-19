@@ -9,7 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { productos, metodoPagoId, total: totalFrontend, tasaBCV } = await request.json();
+    const { productos, metodoPagoId, referencia, total: totalFrontend, tasaBCV } = await request.json();
 
     if (!productos?.length || !metodoPagoId) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
@@ -48,6 +48,7 @@ export async function POST(request: Request) {
           total: totalRealCalculado,
           totalBs,
           tasaBCV: tasaBCV || 0,
+          referencia: referencia || null,
           metodoPagoId: metodoPagoId,
           comercioId: session.user.comercioId!,
         },

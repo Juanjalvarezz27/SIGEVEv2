@@ -77,6 +77,8 @@ model Producto {
   nombre      String
   precio      Float
   porPeso     Boolean?
+  unidad      String?  @default("kg")
+  cantidadBase Float?  @default(1)
   stock       Float    @default(0)
 
   activo      Boolean  @default(true)
@@ -94,6 +96,7 @@ model Venta {
   totalBs      Float
   tasaBCV      Float
   fechaHora    DateTime @default(now())
+  referencia   String?
 
   metodoPagoId String
   metodoPago   MetodosPago @relation(fields: [metodoPagoId], references: [id], onDelete: Restrict)
@@ -137,6 +140,7 @@ model Deuda {
   id          String   @id @default(uuid())
   tipo        String // "COBRAR" | "PAGAR"
   persona     String
+  cedula      String?
   descripcion String?
   detalles    Json?
   monto       Float
@@ -157,6 +161,8 @@ model Gasto {
   id          String   @id @default(uuid())
   descripcion String
   monto       Float
+  montoBs     Float?
+  tasaBCV     Float?
   fecha       DateTime @default(now())
 
   comercioId  String

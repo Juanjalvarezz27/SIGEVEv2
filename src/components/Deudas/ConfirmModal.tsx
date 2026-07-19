@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { AlertTriangle, X } from "lucide-react";
 
 interface ConfirmModalProps {
@@ -17,7 +18,14 @@ export default function ConfirmModal({
   titulo = "¿Estás seguro?", 
   mensaje = "Esta acción no se puede deshacer." 
 }: ConfirmModalProps) {
-  
+  const [confirmText, setConfirmText] = useState("");
+
+  useEffect(() => {
+    if (isOpen) {
+      setConfirmText("");
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -29,7 +37,18 @@ export default function ConfirmModal({
         </div>
 
         <h3 className="text-lg font-bold text-gray-900 mb-2">{titulo}</h3>
-        <p className="text-sm text-gray-500 mb-6">{mensaje}</p>
+        <p className="text-sm text-gray-500 mb-4">{mensaje}</p>
+
+        <div className="mb-6 text-left">
+           <label className="block text-xs font-bold text-gray-500 mb-2">Escribe <span className="text-red-500 select-all">ELIMINAR</span> para confirmar:</label>
+           <input 
+             type="text"
+             value={confirmText}
+             onChange={(e) => setConfirmText(e.target.value)}
+             className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-red-500 focus:ring-4 focus:ring-red-100 outline-none transition-all font-bold text-gray-700 uppercase"
+             placeholder="ELIMINAR"
+           />
+        </div>
 
         <div className="flex gap-3">
            <button 
@@ -40,7 +59,8 @@ export default function ConfirmModal({
            </button>
            <button 
              onClick={() => { onConfirm(); onClose(); }} 
-             className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors shadow-lg shadow-red-200"
+             disabled={confirmText.toUpperCase() !== 'ELIMINAR'}
+             className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors shadow-lg shadow-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
            >
              Eliminar
            </button>

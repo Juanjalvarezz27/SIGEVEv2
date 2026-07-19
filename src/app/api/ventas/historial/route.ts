@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/src/lib/prisma';
 import { auth } from '@/src/auth';
+import { gzipSync } from 'zlib';
 
 function obtenerRangoFechaVenezuela() {
   const ahora = new Date();
@@ -21,6 +22,8 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
+    const soloEstadisticas = searchParams.get('soloEstadisticas') === 'true';
+    const soloVentas = searchParams.get('soloVentas') === 'true';
     const limit = 20;
     const skip = (page - 1) * limit;
 
@@ -30,45 +33,82 @@ export async function GET(request: Request) {
       fechaHora: { gte: inicioDia, lte: finDia },
     };
 
-    // 1. ESTADÍSTICAS GLOBALES
+    // 1. ESTADÍSTICAS GLOBALES Y POR MÉTODO DE PAGO
     const statsAgregados = await prisma.venta.aggregate({
       where: whereClause,
       _sum: { total: true, totalBs: true },
       _count: { id: true }
     });
 
-    const ventasDelDia = await prisma.venta.findMany({
-      where: whereClause,
-      select: {
-        productos: { select: { cantidad: true, producto: { select: { porPeso: true } } } }
-      }
-    });
+    let estadisticas = null;
+    
+    if (!soloVentas) {
+      const productosVendidosDb = await prisma.ventaProducto.findMany({
+        where: { venta: whereClause },
+        select: { cantidad: true, producto: { select: { porPeso: true } } }
+      });
+      const productosVendidos = productosVendidosDb.reduce((acc, p) => acc + (p.producto.porPeso ? 1 : p.cantidad), 0);
 
-    const productosVendidos = ventasDelDia.reduce((sum, venta) => {
-      return sum + venta.productos.reduce((pSum, prod) =>
-        pSum + (prod.producto.porPeso ? 1 : prod.cantidad), 0);
-    }, 0);
+      const ventasPorMetodo = await prisma.venta.groupBy({
+        by: ['metodoPagoId'],
+        where: whereClause,
+        _sum: { total: true, totalBs: true },
+        _count: { id: true }
+      });
 
-    const estadisticas = {
-      totalVentas: statsAgregados._count.id,
-      totalIngresos: statsAgregados._sum.total || 0,
-      totalIngresosBs: statsAgregados._sum.totalBs || 0,
-      productosVendidos: productosVendidos,
-      fecha: new Date().toISOString(),
-    };
+      const metodosData = await prisma.metodosPago.findMany({ select: { id: true, nombre: true } });
+      const metodosMap = new Map(metodosData.map(m => [m.id, m.nombre]));
+
+      const desgloseMetodos = ventasPorMetodo.map(grupo => ({
+        metodo: metodosMap.get(grupo.metodoPagoId || '') || 'Desconocido',
+        usd: grupo._sum.total || 0,
+        bs: grupo._sum.totalBs || 0,
+        count: grupo._count.id
+      }));
+
+      estadisticas = {
+        totalVentas: statsAgregados._count.id,
+        totalIngresos: statsAgregados._sum.total || 0,
+        totalIngresosBs: statsAgregados._sum.totalBs || 0,
+        productosVendidos: productosVendidos,
+        fecha: new Date().toISOString(),
+        metodos: desgloseMetodos
+      };
+    }
 
     // 2. VENTAS PAGINADAS (Incluyendo DEUDA)
-    const ventas = await prisma.venta.findMany({
+    let ventas: any[] = [];
+    if (!soloEstadisticas) {
+      ventas = await prisma.venta.findMany({
       where: whereClause,
-      include: {
-        metodoPago: true,
-        productos: { include: { producto: true } },
-        deuda: true // <--- ESTO ES LA CLAVE
+      select: {
+        id: true,
+        fechaHora: true,
+        total: true,
+        totalBs: true,
+        referencia: true,
+        metodoPago: { select: { nombre: true, id: true } },
+        deuda: true,
+        productos: {
+          select: {
+            cantidad: true,
+            precioUnitario: true,
+            producto: {
+              select: {
+                id: true,
+                nombre: true,
+                porPeso: true,
+                unidad: true,
+              }
+            }
+          }
+        }
       },
       orderBy: { fechaHora: 'desc' },
       skip: skip,
       take: limit,
-    });
+      });
+    }
 
     const pagination = {
       page,
@@ -77,7 +117,16 @@ export async function GET(request: Request) {
       totalPages: Math.ceil(statsAgregados._count.id / limit),
     };
 
-    return NextResponse.json({ ventas, estadisticas, pagination });
+    const payload = JSON.stringify({ ventas, estadisticas, pagination });
+    const compressed = gzipSync(Buffer.from(payload, 'utf-8'));
+
+    return new NextResponse(compressed, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Encoding': 'gzip'
+      }
+    });
 
   } catch (error: any) {
     console.error('Error historial:', error);

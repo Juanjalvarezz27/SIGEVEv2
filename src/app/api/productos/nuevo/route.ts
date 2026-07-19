@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { nombre, precio, porPeso, stock } = body; // <--- RECIBIMOS STOCK
+    const { nombre, precio, porPeso, stock, unidad, cantidadBase } = body;
 
     if (!nombre || precio === undefined) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
@@ -38,7 +38,9 @@ export async function POST(request: Request) {
         nombre: nombre.trim(),
         precio: parseFloat(precio),
         porPeso: porPeso ? true : null,
-        stock: parseFloat(stock) || 0, // <--- GUARDAMOS STOCK
+        unidad: porPeso ? (unidad || 'kg') : null,
+        cantidadBase: cantidadBase ? parseFloat(cantidadBase) : null,
+        stock: parseFloat(stock) || 0,
         comercioId: session.user.comercioId,
       },
     });

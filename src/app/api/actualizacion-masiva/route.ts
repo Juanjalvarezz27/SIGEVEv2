@@ -57,10 +57,10 @@ export async function PUT(req: Request) {
     if (!session?.user?.comercioId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
     const body = await req.json();
-    const { ids, tipoAccion, tipoValor, valor, redondear } = body; 
+    const { ids, tipoAccion, tipoValor, valor, redondear, aplicarATodo } = body; 
     
     // Validaciones básicas
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    if (!aplicarATodo && (!ids || !Array.isArray(ids) || ids.length === 0)) {
       return NextResponse.json({ error: "No seleccionaste productos" }, { status: 400 });
     }
 
@@ -69,50 +69,65 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Valor inválido" }, { status: 400 });
     }
 
-    // TRANSACCIÓN
-    await prisma.$transaction(async (tx) => {
-      // 1. Buscar los productos actuales para tener su precio base
-      const productos = await tx.producto.findMany({
-        where: { id: { in: ids }, comercioId: session.user.comercioId! }
-      });
+    // TRANSACCIÓN O EJECUCIÓN DIRECTA
+    if (aplicarATodo) {
+        // VÍA RÁPIDA (Raw SQL) para TODO el inventario sin paginar ni saturar RAM
+        const param1 = tipoValor === "PORCENTAJE" && tipoAccion !== "FIJAR" 
+            ? (tipoAccion === "AUMENTAR" ? (1 + valorNum / 100) : (1 - valorNum / 100)) 
+            : valorNum;
 
-      for (const prod of productos) {
-        let nuevoPrecio = prod.precio;
+        let baseCalc = tipoAccion === "FIJAR" ? `$1::numeric` 
+            : tipoValor === "PORCENTAJE" ? `"precio" * $1::numeric` 
+            : tipoAccion === "AUMENTAR" ? `"precio" + $1::numeric` 
+            : `"precio" - $1::numeric`;
 
-        // Cálculos
-        if (tipoAccion === "FIJAR") {
-          nuevoPrecio = valorNum;
-        } else {
-          let delta = 0;
-          if (tipoValor === "PORCENTAJE") {
-            delta = prod.precio * (valorNum / 100);
-          } else {
-            delta = valorNum;
-          }
+        let finalPrecio = `GREATEST(${baseCalc}, 0)`;
+        finalPrecio = redondear 
+            ? `ROUND(CAST(${finalPrecio} * 2 AS numeric)) / 2` 
+            : `ROUND(CAST(${finalPrecio} AS numeric), 2)`;
 
-          if (tipoAccion === "AUMENTAR") nuevoPrecio += delta;
-          if (tipoAccion === "DISMINUIR") nuevoPrecio -= delta;
-        }
+        await prisma.$executeRawUnsafe(`
+            UPDATE "Producto" 
+            SET "precio" = ${finalPrecio} 
+            WHERE "comercioId" = $2
+        `, param1, session.user.comercioId);
 
-        // Evitar negativos
-        if (nuevoPrecio < 0) nuevoPrecio = 0;
+    } else {
+        // VÍA JS para selección específica (máx 100 items, seguro para RAM)
+        await prisma.$transaction(async (tx) => {
+          const productos = await tx.producto.findMany({
+            where: { id: { in: ids }, comercioId: session.user.comercioId! },
+            select: { id: true, precio: true }
+          });
 
-        // Redondeo
-        if (redondear) {
-          nuevoPrecio = Math.round(nuevoPrecio * 2) / 2; // Redondeo a .00 o .50
-        } else {
-          nuevoPrecio = Math.round(nuevoPrecio * 100) / 100; // 2 decimales estándar
-        }
+          await Promise.all(productos.map(async (prod) => {
+              let nuevoPrecio = prod.precio;
 
-        // Actualizar
-        await tx.producto.update({
-          where: { id: prod.id },
-          data: { precio: nuevoPrecio }
+              if (tipoAccion === "FIJAR") {
+                nuevoPrecio = valorNum;
+              } else {
+                let delta = tipoValor === "PORCENTAJE" ? prod.precio * (valorNum / 100) : valorNum;
+                if (tipoAccion === "AUMENTAR") nuevoPrecio += delta;
+                if (tipoAccion === "DISMINUIR") nuevoPrecio -= delta;
+              }
+
+              if (nuevoPrecio < 0) nuevoPrecio = 0;
+
+              if (redondear) {
+                nuevoPrecio = Math.round(nuevoPrecio * 2) / 2;
+              } else {
+                nuevoPrecio = Math.round(nuevoPrecio * 100) / 100;
+              }
+
+              return tx.producto.update({
+                where: { id: prod.id },
+                data: { precio: nuevoPrecio }
+              });
+          }));
         });
-      }
-    });
+    }
 
-    return NextResponse.json({ success: true, message: `Actualizados ${ids.length} productos` });
+    return NextResponse.json({ success: true, message: `Inventario actualizado correctamente` });
 
   } catch (error: any) {
     console.error(error);

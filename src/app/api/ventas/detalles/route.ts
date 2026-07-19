@@ -9,6 +9,7 @@ import {
   endOfWeek, 
   subDays
 } from 'date-fns';
+import { gzipSync } from 'zlib';
 
 const prisma = new PrismaClient();
 
@@ -89,16 +90,35 @@ export async function GET(request: NextRequest) {
           lte: endDate,
         },
       },
-      include: {
-        metodoPago: true,
+      select: {
+        id: true,
+        total: true,
+        totalBs: true,
+        tasaBCV: true,
+        fechaHora: true,
+        metodoPagoId: true,
+        metodoPago: {
+          select: {
+            id: true,
+            nombre: true,
+          }
+        },
         productos: {
-          include: {
+          select: {
+            id: true,
+            ventaId: true,
+            productoId: true,
+            cantidad: true,
+            peso: true,
+            precioUnitario: true,
+            precioUnitarioBs: true,
             producto: {
               select: {
                 id: true,
                 nombre: true,
                 precio: true,
                 porPeso: true,
+                unidad: true,
               },
             },
           },
@@ -117,7 +137,7 @@ export async function GET(request: NextRequest) {
       return sum + venta.productos.reduce((prodSum, prod) => prodSum + prod.cantidad, 0);
     }, 0);
 
-    return NextResponse.json({
+    const payload = JSON.stringify({
       periodo: {
         fechaInicio: startDate.toISOString(),
         fechaFin: endDate.toISOString(),
@@ -129,33 +149,17 @@ export async function GET(request: NextRequest) {
         totalIngresosBs,
         totalProductosVendidos,
       },
-      ventas: ventas.map(venta => ({
-        id: venta.id,
-        total: venta.total,
-        totalBs: venta.totalBs,
-        tasaBCV: venta.tasaBCV,
-        fechaHora: venta.fechaHora.toISOString(),
-        metodoPagoId: venta.metodoPagoId,
-        metodoPago: {
-          id: venta.metodoPago.id,
-          nombre: venta.metodoPago.nombre,
-        },
-        productos: venta.productos.map(prod => ({
-          id: prod.id,
-          ventaId: prod.ventaId,
-          productoId: prod.productoId,
-          cantidad: prod.cantidad,
-          peso: prod.peso,
-          precioUnitario: prod.precioUnitario,
-          precioUnitarioBs: prod.precioUnitarioBs,
-          producto: {
-            id: prod.producto.id,
-            nombre: prod.producto.nombre,
-            precio: prod.producto.precio,
-            porPeso: prod.producto.porPeso,
-          },
-        })),
-      })),
+      ventas: ventas,
+    });
+
+    const compressed = gzipSync(Buffer.from(payload, 'utf-8'));
+
+    return new NextResponse(compressed, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Encoding': 'gzip'
+      }
     });
 
   } catch (error: any) {

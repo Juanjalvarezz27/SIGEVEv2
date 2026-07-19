@@ -30,31 +30,66 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const tipo = searchParams.get("tipo");
+    const estado = searchParams.get("estado");
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "20", 10);
+    const q = searchParams.get("q") || "";
+    const skip = (page - 1) * limit;
 
-    // CORRECCIÓN: Usamos !
     const whereClause: Prisma.DeudaWhereInput = { 
         comercioId: session.user.comercioId! 
     };
     
     if (tipo) whereClause.tipo = tipo;
+    if (estado) whereClause.estado = estado;
+    if (q) {
+        whereClause.OR = [
+            { persona: { contains: q, mode: "insensitive" } },
+            { cedula: { contains: q, mode: "insensitive" } }
+        ];
+    }
 
+    // 1. Calcular el total pendiente si se solicita un tipo específico (COBRAR/PAGAR)
+    let totalPendiente = 0;
+    if (tipo) {
+       const aggregate = await prisma.deuda.aggregate({
+         where: { comercioId: session.user.comercioId!, tipo, estado: "PENDIENTE" },
+         _sum: { monto: true, abonado: true }
+       });
+       totalPendiente = (aggregate._sum.monto || 0) - (aggregate._sum.abonado || 0);
+    }
+
+    // 2. Contar el total de registros para calcular las páginas
+    const totalRegistros = await prisma.deuda.count({ where: whereClause });
+    const totalPaginas = Math.ceil(totalRegistros / limit);
+
+    // 3. Obtener solo los registros de la página actual
     const deudas = await prisma.deuda.findMany({
       where: whereClause,
       orderBy: { fecha: "desc" },
+      skip,
+      take: limit
     });
-    return NextResponse.json(deudas);
+
+    return NextResponse.json({
+        deudas,
+        paginaActual: page,
+        totalPaginas: totalPaginas || 1,
+        resumen: {
+            totalPendiente
+        }
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
   }
 }
-
 export async function POST(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.comercioId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
     const body = await req.json();
-    const { tipo, persona, descripcion, monto, telefono, productos } = body;
+    const { tipo, persona, cedula, descripcion, monto, telefono, productos } = body;
     const montoFloat = parseFloat(monto);
 
     if (montoFloat <= 0) return NextResponse.json({ error: "Monto inválido" }, { status: 400 });
@@ -66,9 +101,11 @@ export async function POST(req: Request) {
         if (tipo === "COBRAR") {
             const deudaExistente = await tx.deuda.findFirst({
                 where: {
-                    // CORRECCIÓN: Usamos !
                     comercioId: session.user.comercioId!,
-                    persona: { equals: persona, mode: "insensitive" },
+                    OR: [
+                        cedula ? { cedula } : null,
+                        { persona: { equals: persona, mode: "insensitive" } }
+                    ].filter(Boolean) as any,
                     tipo: "COBRAR",
                     estado: "PENDIENTE"
                 }
@@ -87,7 +124,8 @@ export async function POST(req: Request) {
                         monto: { increment: montoFloat },
                         descripcion: nuevaDescripcion,
                         detalles: detallesFusionados,
-                        telefono: telefono || deudaExistente.telefono,
+                        telefono: deudaExistente.telefono || telefono,
+                        cedula: deudaExistente.cedula || cedula,
                         fecha: new Date()
                     }
                 });
@@ -99,10 +137,9 @@ export async function POST(req: Request) {
             const nuevosConFecha = productos ? productos.map((p: any) => ({ ...p, fechaAgregado: new Date() })) : [];
             deudaFinal = await tx.deuda.create({
                 data: {
-                    tipo, persona, descripcion, telefono,
+                    tipo, persona, cedula, descripcion, telefono,
                     monto: montoFloat,
                     detalles: nuevosConFecha,
-                    // CORRECCIÓN: Usamos !
                     comercioId: session.user.comercioId!,
                     fecha: new Date(),
                     abonado: 0,
@@ -148,7 +185,7 @@ export async function PUT(req: Request) {
 
     // 1. EDITAR DATOS
     if (body.accion === "EDITAR") {
-      const { id, persona, descripcion, monto, telefono, productos } = body;
+      const { id, persona, cedula, descripcion, monto, telefono, productos } = body;
       const montoF = parseFloat(monto);
       if (montoF <= 0) return NextResponse.json({ error: "Monto inválido" }, { status: 400 });
 
@@ -158,7 +195,7 @@ export async function PUT(req: Request) {
 
       return NextResponse.json(await prisma.deuda.update({
         where: { id },
-        data: { persona, descripcion, monto: montoF, telefono, detalles: productos }
+        data: { persona, cedula, descripcion, monto: montoF, telefono, detalles: productos }
       }));
     }
 

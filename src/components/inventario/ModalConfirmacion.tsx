@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 
 interface ModalConfirmacionProps {
@@ -17,6 +18,14 @@ const ModalConfirmacion = ({
   productoNombre,
   loading = false
 }: ModalConfirmacionProps) => {
+  const [confirmText, setConfirmText] = useState("");
+
+  useEffect(() => {
+    if (isOpen) {
+      setConfirmText("");
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -60,10 +69,21 @@ const ModalConfirmacion = ({
                 "{productoNombre}"
               </p>
             </div>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-gray-500 mb-4">
               Esta acción eliminará permanentemente el producto del sistema. 
               Si el producto está asociado a ventas, no podrá ser eliminado.
             </p>
+
+            <div className="mb-2 text-left">
+               <label className="block text-xs font-bold text-gray-500 mb-2">Escribe <span className="text-red-500 select-all">ELIMINAR</span> para confirmar:</label>
+               <input 
+                 type="text"
+                 value={confirmText}
+                 onChange={(e) => setConfirmText(e.target.value)}
+                 className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-red-500 focus:ring-4 focus:ring-red-100 outline-none transition-all font-bold text-gray-700 uppercase"
+                 placeholder="ELIMINAR"
+               />
+            </div>
           </div>
 
           {/* Footer */}
@@ -77,12 +97,12 @@ const ModalConfirmacion = ({
             </button>
             <button
               onClick={onConfirm}
-              disabled={loading}
+              disabled={loading || confirmText.toUpperCase() !== 'ELIMINAR'}
               className="px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white font-medium rounded-lg hover:from-red-700 hover:to-red-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-[3px] border-white/30 border-t-white mr-2"></div>
                   Eliminando...
                 </>
               ) : (

@@ -11,26 +11,18 @@ import {
   ArrowRightLeft 
 } from 'lucide-react';
 
-interface Venta {
-  total: number;
-  totalBs: number;
-  metodoPago: { nombre: string };
+interface MetodoStat {
+  metodo: string;
+  usd: number;
+  bs: number;
+  count: number;
 }
 
-export default function EstadisticasMetodosPago({ ventas }: { ventas: Venta[] }) {
-  const totalGeneral = ventas.reduce((acc, v) => acc + v.total, 0);
-
-  const stats = ventas.reduce((acc, curr) => {
-    const metodo = curr.metodoPago.nombre;
-    if (!acc[metodo]) acc[metodo] = { usd: 0, bs: 0, count: 0 };
-    acc[metodo].usd += curr.total;
-    acc[metodo].bs += curr.totalBs;
-    acc[metodo].count += 1;
-    return acc;
-  }, {} as Record<string, { usd: number, bs: number, count: number }>);
+export default function EstadisticasMetodosPago({ metodosStats }: { metodosStats: MetodoStat[] }) {
+  const totalGeneral = metodosStats.reduce((acc, stat) => acc + stat.usd, 0);
 
   // Ordenar por mayor ingreso USD
-  const sortedStats = Object.entries(stats).sort((a, b) => b[1].usd - a[1].usd);
+  const sortedStats = [...metodosStats].sort((a, b) => b.usd - a.usd);
 
   // --- LÓGICA DE ESTILOS Y COLORES ---
   const getPaymentStyle = (nombre: string) => {
@@ -133,7 +125,8 @@ export default function EstadisticasMetodosPago({ ventas }: { ventas: Venta[] })
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {sortedStats.map(([nombre, data]) => {
+      {sortedStats.map((data) => {
+        const nombre = data.metodo;
         const porcentaje = totalGeneral > 0 ? (data.usd / totalGeneral) * 100 : 0;
         const style = getPaymentStyle(nombre);
         
@@ -166,10 +159,10 @@ export default function EstadisticasMetodosPago({ ventas }: { ventas: Venta[] })
             <div className="flex items-end justify-between mb-4">
                <div>
                  <p className="text-2xl font-black tracking-tight text-gray-800">${data.usd.toFixed(2)}</p>
-                 <p className="text-xs text-gray-500 font-medium font-mono mt-0.5">Bs {data.bs.toFixed(2)}</p>
+                 <p className="text-sm text-gray-500 font-bold mt-0.5 tracking-tight">Bs {data.bs.toFixed(2)}</p>
                </div>
                <div className="text-right pb-1">
-                 <span className={`text-sm font-bold ${style.text}`}>{porcentaje.toFixed(0)}%</span>
+                 <span className={`text-sm font-black ${style.text}`}>{porcentaje.toFixed(0)}%</span>
                </div>
             </div>
 

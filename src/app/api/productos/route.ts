@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/src/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { auth } from '@/src/auth';
+import { gzipSync } from 'zlib';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,6 +43,8 @@ export async function GET(request: Request) {
           nombre: true,
           precio: true,
           porPeso: true,
+          unidad: true,
+          cantidadBase: true,
           stock: true,
         },
       }),
@@ -50,13 +53,23 @@ export async function GET(request: Request) {
 
     const totalPages = Math.ceil(total / limit);
 
-    return NextResponse.json({
+    const payload = JSON.stringify({
       productos,
       pagination: {
         page, limit, total, totalPages,
         hasNextPage: page < totalPages,
         hasPrevPage: page > 1,
       },
+    });
+
+    const compressed = gzipSync(Buffer.from(payload, 'utf-8'));
+
+    return new NextResponse(compressed, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Encoding': 'gzip'
+      }
     });
 
   } catch (error: any) {

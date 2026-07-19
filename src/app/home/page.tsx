@@ -79,19 +79,18 @@ export default function HomePage() {
   const esActivo = data.comercio?.activo || false;
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-4 md:space-y-6">
-      <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 md:gap-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            ¡Hola, {data.nombre}! <span className="text-2xl animate-pulse">👋</span>
-          </h1>
-          <div className="flex items-center gap-2 text-gray-500 mt-1">
-            <Store size={18} />
-            <span className="text-sm font-medium">
-              Panel de: <span className="text-indigo-600 font-bold">{nombreComercio}</span>
-            </span>
-          </div>
-        </div>
+    <div className="w-full max-w-full mx-auto space-y-4 md:space-y-6">
+      {/* HEADER PREMIUM */}
+      <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center bg-white p-6 rounded-3xl border border-gray-100 shadow-sm mb-2">
+         <div className="flex items-center gap-5">
+            <div className="p-4 rounded-2xl text-white shadow-inner flex flex-shrink-0 items-center justify-center bg-gradient-to-br from-indigo-500 to-blue-600 shadow-indigo-200">
+               <Store size={32} strokeWidth={2}/>
+            </div>
+            <div>
+               <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2">¡Hola, {data.nombre}! <span className="text-2xl animate-pulse">👋</span></h1>
+               <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Panel de: <span className="text-indigo-600 font-bold">{nombreComercio}</span></p>
+            </div>
+         </div>
 
         {/* Contenedor Badges y Tasa */}
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full lg:w-auto">

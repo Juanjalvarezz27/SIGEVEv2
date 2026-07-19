@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ShoppingCart, Trash2, Plus, Minus, CreditCard,
   Loader2, Wallet, BadgeDollarSign, Smartphone, Building, Weight,
@@ -16,6 +17,8 @@ interface ProductoSeleccionado {
   cantidad: number;
   peso?: number;
   porPeso?: boolean | null;
+  unidad?: string | null;
+  cantidadBase?: number | null;
   subtotal: number;
 }
 
@@ -34,6 +37,8 @@ interface CarritoVentaProps {
   metodosPago: MetodoPago[];
   metodoPagoId: string;
   setMetodoPagoId: (id: string) => void;
+  referencia: string;
+  setReferencia: (ref: string) => void;
   registrarVenta: () => void;
   cargando: boolean;
   tasaBCV: number | null;
@@ -60,6 +65,8 @@ export default function CarritoVenta({
   metodosPago,
   metodoPagoId,
   setMetodoPagoId,
+  referencia,
+  setReferencia,
   registrarVenta,
   cargando,
   tasaBCV,
@@ -75,6 +82,7 @@ export default function CarritoVenta({
   // --- ESTADOS MODAL FIADO ---
   const [modalFiadoOpen, setModalFiadoOpen] = useState(false);
   const [clienteNombre, setClienteNombre] = useState("");
+  const [clienteCedula, setClienteCedula] = useState("");
   const [clienteTelefono, setClienteTelefono] = useState("");
   const [clienteNota, setClienteNota] = useState("");
   const [guardandoFiado, setGuardandoFiado] = useState(false);
@@ -95,7 +103,8 @@ export default function CarritoVenta({
               if (!unicos.has(d.persona.toLowerCase())) {
                 unicos.set(d.persona.toLowerCase(), {
                   persona: d.persona,
-                  telefono: d.telefono
+                  telefono: d.telefono,
+                  cedula: d.cedula || ""
                 });
               }
             });
@@ -110,7 +119,8 @@ export default function CarritoVenta({
     setClienteNombre(val);
     if (val.length > 1) {
       const filtrados = deudoresExistentes.filter(d =>
-        d.persona.toLowerCase().includes(val.toLowerCase())
+        d.persona.toLowerCase().includes(val.toLowerCase()) || 
+        (d.cedula && d.cedula.toLowerCase().includes(val.toLowerCase()))
       );
       setSugerencias(filtrados);
       setMostrarSugerencias(true);
@@ -122,6 +132,7 @@ export default function CarritoVenta({
   const seleccionarCliente = (cliente: any) => {
     setClienteNombre(cliente.persona);
     setClienteTelefono(cliente.telefono || "");
+    setClienteCedula(cliente.cedula || "");
     setMostrarSugerencias(false);
   };
 
@@ -158,7 +169,7 @@ export default function CarritoVenta({
     setGuardandoFiado(true);
     try {
       const itemsString = productosSeleccionados.map(p => {
-         const unid = p.porPeso ? "kg" : "unid";
+         const unid = p.porPeso ? (p.unidad || "kg") : "unid";
          const cant = p.porPeso ? p.peso : p.cantidad;
          return `• ${cant} ${unid} x ${p.nombre} ($${p.precio})`;
       }).join("\n");
@@ -168,6 +179,7 @@ export default function CarritoVenta({
       const payload = {
         tipo: "COBRAR",        
         persona: clienteNombre,
+        cedula: clienteCedula,
         telefono: clienteTelefono,
         descripcion: descripcionFinal,
         monto: total,
@@ -184,6 +196,7 @@ export default function CarritoVenta({
         toast.success(`Cuenta actualizada para ${clienteNombre}`);
         setModalFiadoOpen(false);
         setClienteNombre("");
+        setClienteCedula("");
         setClienteTelefono("");
         setClienteNota("");
         limpiarCarrito();
@@ -211,7 +224,7 @@ export default function CarritoVenta({
       </div>
 
       {/* ITEMS */}
-      <div className="space-y-3 mb-6 max-h-96 overflow-y-auto pr-1 flex-1 custom-scrollbar">
+      <div className="space-y-3 mb-6 overflow-y-auto pr-1 flex-1 custom-scrollbar">
         {productosSeleccionados.length === 0 ? (
           <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200 h-full flex flex-col justify-center items-center">
             <ShoppingCart className="w-10 h-10 text-gray-300 mb-2" />
@@ -224,13 +237,13 @@ export default function CarritoVenta({
               <div className="pr-6">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="font-semibold text-gray-800 text-sm">{p.nombre}</h3>
-                  {p.porPeso && <span className="bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center gap-1"><Weight size={10}/> Kg</span>}
+                  {p.porPeso && <span className="bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center gap-1"><Weight size={10}/> {p.unidad || 'kg'}</span>}
                 </div>
                 <div className="flex justify-between items-end mt-2">
                   {p.porPeso ? (
                     <div className="flex items-center gap-2">
                       <input type="text" inputMode="decimal" value={getDisplayValue(p.id)} onChange={(e) => handlePesoChange(p.id, e.target.value)} onBlur={(e) => handlePesoBlur(p.id, e.target.value)} onFocus={() => setIsEditing(prev => ({ ...prev, [p.id]: true }))} className="w-20 px-2 py-2 md:py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-center font-mono" placeholder="0.000" />
-                      <span className="text-xs text-gray-500">kg</span>
+                      <span className="text-xs text-gray-500 font-bold">{p.unidad || 'kg'}</span>
                     </div>
                   ) : (
                     <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm">
@@ -241,7 +254,7 @@ export default function CarritoVenta({
                   )}
                   <div className="text-right">
                     <div className="font-bold text-gray-800 text-base md:text-sm">${p.subtotal.toFixed(2)}</div>
-                    <div className="text-[10px] text-gray-500">${p.precio.toFixed(2)} unit</div>
+                    <div className="text-[10px] text-gray-500">${p.precio.toFixed(2)} / {p.porPeso ? `${p.cantidadBase || 1} ${p.unidad || 'kg'}` : 'unit'}</div>
                   </div>
                 </div>
               </div>
@@ -267,14 +280,27 @@ export default function CarritoVenta({
         </div>
 
         {/* PAGOS */}
-        <div className="mb-4 md:mb-6">
-          <label className="hidden md:block text-xs font-bold text-gray-500 uppercase mb-2">Método de Pago</label>
-          <div className="grid grid-cols-4 md:grid-cols-2 gap-2">
-            {metodosPago.map(m => (
-              <button key={m.id} onClick={() => setMetodoPagoId(m.id)} className={`p-2 md:p-3 rounded-lg border text-xs md:text-sm font-medium flex flex-col items-center gap-1 transition-all ${metodoPagoId === m.id ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-500' : 'border-gray-200 hover:border-blue-300 text-gray-600'}`}>
-                {getMetodoPagoIcon(m.nombre)} <span className="truncate w-full text-center">{m.nombre.split(' ')[0]}</span>
-              </button>
-            ))}
+        <div className="mb-4 md:mb-6 space-y-3">
+          <div>
+            <label className="hidden md:block text-xs font-bold text-gray-500 uppercase mb-2">Método de Pago</label>
+            <div className="grid grid-cols-4 md:grid-cols-2 gap-2">
+              {metodosPago.map(m => (
+                <button key={m.id} onClick={() => setMetodoPagoId(m.id)} className={`p-2 md:p-3 rounded-lg border text-xs md:text-sm font-medium flex flex-col items-center gap-1 transition-all ${metodoPagoId === m.id ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-500' : 'border-gray-200 hover:border-blue-300 text-gray-600'}`}>
+                  {getMetodoPagoIcon(m.nombre)} <span className="truncate w-full text-center">{m.nombre.split(' ')[0]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div>
+             <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Referencia (Opcional)</label>
+             <input 
+                type="text" 
+                placeholder="# Ref Zelle, Pago Móvil..." 
+                value={referencia} 
+                onChange={(e) => setReferencia(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-sm"
+             />
           </div>
         </div>
 
@@ -293,8 +319,8 @@ export default function CarritoVenta({
     </div>
 
     {/* --- MODAL FIAR PEDIDO (DISEÑO MEJORADO) --- */}
-    {modalFiadoOpen && (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    {modalFiadoOpen && typeof document !== 'undefined' && createPortal(
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
         <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
          
           <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
@@ -333,7 +359,7 @@ export default function CarritoVenta({
                             onClick={() => seleccionarCliente(s)}
                             className="w-full text-left px-4 py-3 hover:bg-orange-50 text-sm text-gray-700 font-bold flex justify-between items-center border-b border-gray-50"
                          >
-                            {s.persona}
+                            {s.persona} {s.cedula && <span className="text-xs text-gray-400 font-normal bg-gray-100 px-2 py-0.5 rounded ml-2">{s.cedula}</span>}
                             {s.telefono && <span className="text-xs text-gray-400 font-normal">{s.telefono}</span>}
                          </button>
                       ))}
@@ -341,13 +367,27 @@ export default function CarritoVenta({
                 )}
              </div>
 
+             {/* CEDULA */}
+             <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Cédula / RIF</label>
+                <div className="relative">
+                   <CreditCard className="absolute left-3 top-3.5 text-gray-400" size={18}/>
+                   <input
+                       className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100 font-medium text-gray-700"
+                       placeholder="Ej: V-12345678"
+                       value={clienteCedula}
+                       onChange={e => setClienteCedula(e.target.value)}
+                   />
+                </div>
+             </div>
+
              {/* TELEFONO */}
              <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Teléfono</label>
                 <div className="relative">
-                   <Phone className="absolute left-3 top-3.5 text-gray-400" size={18}/>
+                   <Phone className={`absolute left-3 top-3.5 ${clienteTelefono.length === 11 ? 'text-green-500' : 'text-gray-400'}`} size={18}/>
                    <input
-                       className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100 font-medium text-gray-700"
+                       className={`w-full pl-10 pr-4 py-3 rounded-xl border outline-none focus:ring-4 font-medium text-gray-700 ${clienteTelefono.length > 0 && clienteTelefono.length !== 11 ? 'border-red-300 focus:border-red-500 focus:ring-red-100' : 'border-gray-300 focus:border-orange-500 focus:ring-orange-100'}`}
                        placeholder="0412..."
                        value={clienteTelefono}
                        onChange={e => setClienteTelefono(e.target.value)}
@@ -378,7 +418,8 @@ export default function CarritoVenta({
           </div>
 
         </div>
-      </div>
+      </div>,
+      document.body
     )}
     </>
   );

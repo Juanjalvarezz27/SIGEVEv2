@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/src/lib/prisma";
 import { auth } from "@/src/auth";
+import { gzipSync } from "zlib";
 
 export async function GET() {
   try {
@@ -31,8 +32,17 @@ export async function GET() {
       })
     ]);
 
-    // Retornamos ambos datos
-    return NextResponse.json({ productos, metodos: metodosPago });
+    // Retornamos ambos datos comprimidos
+    const payload = JSON.stringify({ productos, metodos: metodosPago });
+    const compressed = gzipSync(Buffer.from(payload, 'utf-8'));
+
+    return new NextResponse(compressed, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Encoding': 'gzip'
+      }
+    });
 
   } catch (error: any) {
     console.error("Error cargando datos:", error);

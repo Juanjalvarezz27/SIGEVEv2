@@ -27,6 +27,13 @@ export default function GestionMetodosPago() {
   // Estado para el Modal de Confirmación
   const [metodoAEliminar, setMetodoAEliminar] = useState<string | null>(null);
   const [eliminando, setEliminando] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+
+  useEffect(() => {
+    if (metodoAEliminar) {
+      setConfirmText("");
+    }
+  }, [metodoAEliminar]);
 
   useEffect(() => {
     cargarMetodos();
@@ -196,9 +203,20 @@ export default function GestionMetodosPago() {
                 <AlertTriangle size={24} />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">¿Eliminar método?</h3>
-              <p className="text-sm text-gray-500 mb-6">
+              <p className="text-sm text-gray-500 mb-4">
                 ¿Estás seguro? Esto podría afectar el historial visual de las ventas si no se maneja con cuidado.
               </p>
+              
+              <div className="mb-6 w-full text-left">
+                 <label className="block text-xs font-bold text-gray-500 mb-2">Escribe <span className="text-red-500 select-all">ELIMINAR</span> para confirmar:</label>
+                 <input 
+                   type="text"
+                   value={confirmText}
+                   onChange={(e) => setConfirmText(e.target.value)}
+                   className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-red-500 focus:ring-4 focus:ring-red-100 outline-none transition-all font-bold text-gray-700 uppercase"
+                   placeholder="ELIMINAR"
+                 />
+              </div>
               
               <div className="flex gap-3 w-full">
                 <button
@@ -210,8 +228,8 @@ export default function GestionMetodosPago() {
                 </button>
                 <button
                   onClick={confirmarEliminacion}
-                  disabled={eliminando}
-                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                  disabled={eliminando || confirmText.toUpperCase() !== 'ELIMINAR'}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {eliminando ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
                   Eliminar

@@ -23,6 +23,7 @@ interface ProductoPrevia {
 
 export default function ModalCargaMasiva({ isOpen, onClose, onSuccess }: ModalProps) {
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [step, setStep] = useState<'UPLOAD' | 'PREVIEW' | 'RESULT'>('UPLOAD');
   
   // Datos procesados
@@ -109,31 +110,55 @@ export default function ModalCargaMasiva({ isOpen, onClose, onSuccess }: ModalPr
     reader.readAsArrayBuffer(file);
   };
 
-  // 3. Subir SOLO los válidos
+  // 3. Subir SOLO los válidos (Con Lotes / Chunking)
   const handleConfirmarCarga = async () => {
     if (productosValidos.length === 0) return;
     setLoading(true);
 
+    const BATCH_SIZE = 500;
+    const totalBatches = Math.ceil(productosValidos.length / BATCH_SIZE);
+    setProgress({ current: 1, total: totalBatches });
+
+    let totalImportados = 0;
+    let totalFallidos = 0;
+    let detallesErrores: any[] = [];
+
     try {
-      const res = await fetch('/api/admin/productos/masivo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productos: productosValidos }),
-      });
+      for (let i = 0; i < totalBatches; i++) {
+        setProgress({ current: i + 1, total: totalBatches });
+        
+        const lote = productosValidos.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
+        
+        const res = await fetch('/api/admin/productos/masivo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productos: lote }),
+        });
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (res.ok) {
-        setResultadoFinal(data);
-        setStep('RESULT');
-        if (data.importados > 0) onSuccess(); // Refrescar lista de fondo
-      } else {
-        toast.error(data.error || "Error en el servidor");
+        if (res.ok) {
+          totalImportados += data.importados || 0;
+          totalFallidos += data.fallidos || 0;
+          if (data.detalles) detallesErrores = [...detallesErrores, ...data.detalles];
+        } else {
+          toast.error(data.error || `Error en el lote ${i + 1}`);
+        }
       }
+
+      setResultadoFinal({ 
+        importados: totalImportados, 
+        fallidos: totalFallidos, 
+        detalles: detallesErrores 
+      });
+      setStep('RESULT');
+      if (totalImportados > 0) onSuccess(); 
+      
     } catch (error) {
-      toast.error("Error de conexión");
+      toast.error("Error de conexión durante la subida");
     } finally {
       setLoading(false);
+      setProgress({ current: 0, total: 0 });
     }
   };
 
@@ -142,6 +167,7 @@ export default function ModalCargaMasiva({ isOpen, onClose, onSuccess }: ModalPr
     setProductosValidos([]);
     setProductosInvalidos([]);
     setResultadoFinal(null);
+    setProgress({ current: 0, total: 0 });
     setStep('UPLOAD');
     if(fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -154,7 +180,7 @@ export default function ModalCargaMasiva({ isOpen, onClose, onSuccess }: ModalPr
   // --- RENDERIZADO POR PASOS ---
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-in fade-in">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95">
         
         {/* Header Dinámico */}
@@ -301,7 +327,7 @@ export default function ModalCargaMasiva({ isOpen, onClose, onSuccess }: ModalPr
         {/* Footer Actions */}
         <div className="p-4 border-t border-gray-100 bg-gray-50 flex gap-3">
             {step === 'UPLOAD' && (
-                <button onClick={handleClose} className="w-full py-3 text-gray-500 font-bold hover:bg-gray-200 rounded-xl transition-colors">
+                <button onClick={handleClose} className="w-full py-3 bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 rounded-xl transition-colors">
                     Cancelar
                 </button>
             )}
@@ -316,7 +342,12 @@ export default function ModalCargaMasiva({ isOpen, onClose, onSuccess }: ModalPr
                         disabled={loading || productosValidos.length === 0}
                         className="flex-[2] py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 hover:bg-emerald-700 disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2 transition-all active:scale-95"
                     >
-                        {loading ? <Loader2 className="animate-spin"/> : `Subir ${productosValidos.length} Productos`}
+                        {loading ? (
+                          <>
+                            <Loader2 className="animate-spin"/> 
+                            Subiendo lote {progress.current} de {progress.total}...
+                          </>
+                        ) : `Subir ${productosValidos.length} Productos`}
                     </button>
                 </>
             )}

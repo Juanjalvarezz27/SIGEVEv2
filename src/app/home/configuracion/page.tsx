@@ -10,65 +10,64 @@ export default function ConfiguracionPage() {
   const [activeTab, setActiveTab] = useState<'perfil' | 'negocio' | 'precios'>('perfil');
 
   return (
-    <div className="w-full max-w-6xl mx-auto min-h-screen pb-24 overflow-x-hidden">
+    <div className="w-full max-w-full mx-auto min-h-screen pb-24 overflow-x-hidden">
 
-      {/* Header */}
-      <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <div className="p-2 bg-gray-900 rounded-lg text-white shrink-0">
-            <Settings size={24} className="md:w-7 md:h-7" />
-          </div>
-          Configuración
-        </h1>
-        <p className="text-sm md:text-base text-gray-500 mt-1 ml-1">Gestiona tu cuenta, pagos e inventario masivo.</p>
+      {/* HEADER PREMIUM */}
+      <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center bg-white p-6 rounded-3xl border border-gray-100 shadow-sm mb-6 md:mb-8">
+         <div className="flex items-center gap-5">
+            <div className="p-4 rounded-2xl text-white shadow-inner flex flex-shrink-0 items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900 shadow-gray-300">
+               <Settings size={32} strokeWidth={2}/>
+            </div>
+            <div>
+               <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Configuración</h1>
+               <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Gestiona tu cuenta, pagos e inventario masivo</p>
+            </div>
+         </div>
       </div>
 
-      {/* === TABS DE NAVEGACIÓN CORREGIDOS === 
-         Usamos -mx-4 px-4 para que en móvil el scroll toque los bordes de la pantalla
-         y pb-2 para que no se corte la sombra del botón activo.
-      */}
-      <div className="mb-8 -mx-4 px-4 md:mx-0 md:px-0">
-        <div className="flex space-x-2 bg-gray-100 p-1 rounded-xl w-full md:w-fit border border-gray-200 overflow-x-auto no-scrollbar">
+      {/* === TABS DE NAVEGACIÓN ULTRA-CLEAN (ESTILO iOS/VERCEL) - TAMAÑO AUMENTADO === */}
+      <div className="mb-10 flex justify-center w-full px-4 md:px-0">
+        <div className="inline-flex flex-nowrap bg-gray-100/70 p-1.5 rounded-[16px] w-full md:w-auto overflow-x-auto no-scrollbar shadow-inner border border-gray-200/50">
           
           <button
             onClick={() => setActiveTab('precios')}
             className={`
-              flex-1 md:flex-none flex items-center justify-center px-4 md:px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap
+              flex-1 md:flex-none flex items-center justify-center px-8 sm:px-10 py-3 rounded-[12px] text-sm sm:text-[15px] font-semibold transition-all duration-300 whitespace-nowrap
               ${activeTab === 'precios'
-                ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-indigo-500/10'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+                ? 'bg-white text-gray-900 shadow-[0_1px_4px_rgba(0,0,0,0.12)]'
+                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200/50'
               }
             `}
           >
-            <Tags size={16} className="mr-2 shrink-0" />
+            <Tags size={18} className={`mr-2.5 shrink-0 ${activeTab === 'precios' ? 'text-indigo-600' : 'text-gray-400'}`} />
             Ajuste Precios
           </button>
 
           <button
             onClick={() => setActiveTab('negocio')}
             className={`
-              flex-1 md:flex-none flex items-center justify-center px-4 md:px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap
+              flex-1 md:flex-none flex items-center justify-center px-8 sm:px-10 py-3 rounded-[12px] text-sm sm:text-[15px] font-semibold transition-all duration-300 whitespace-nowrap
               ${activeTab === 'negocio'
-                ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+                ? 'bg-white text-gray-900 shadow-[0_1px_4px_rgba(0,0,0,0.12)]'
+                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200/50'
               }
             `}
           >
-            <CreditCard size={16} className="mr-2 shrink-0" />
+            <CreditCard size={18} className={`mr-2.5 shrink-0 ${activeTab === 'negocio' ? 'text-indigo-600' : 'text-gray-400'}`} />
             Métodos Pago
           </button>
 
           <button
             onClick={() => setActiveTab('perfil')}
             className={`
-              flex-1 md:flex-none flex items-center justify-center px-4 md:px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap
+              flex-1 md:flex-none flex items-center justify-center px-8 sm:px-10 py-3 rounded-[12px] text-sm sm:text-[15px] font-semibold transition-all duration-300 whitespace-nowrap
               ${activeTab === 'perfil'
-                ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+                ? 'bg-white text-gray-900 shadow-[0_1px_4px_rgba(0,0,0,0.12)]'
+                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200/50'
               }
             `}
           >
-            <User size={16} className="mr-2 shrink-0" />
+            <User size={18} className={`mr-2.5 shrink-0 ${activeTab === 'perfil' ? 'text-indigo-600' : 'text-gray-400'}`} />
             Perfil
           </button>
         </div>

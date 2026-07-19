@@ -8,6 +8,7 @@ export default function ActualizadorPrecios() {
   const [productos, setProductos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
+  const [aplicarATodo, setAplicarATodo] = useState(false);
   
   // Selección
   const [seleccionados, setSeleccionados] = useState<Set<string>>(new Set());
@@ -49,6 +50,7 @@ export default function ActualizadorPrecios() {
   }, [busqueda]);
 
   const toggleSelect = (id: string) => {
+    if (aplicarATodo) return;
     const newSet = new Set(seleccionados);
     if (newSet.has(id)) newSet.delete(id);
     else newSet.add(id);
@@ -82,6 +84,11 @@ export default function ActualizadorPrecios() {
   };
 
   const handleGuardar = async () => {
+    if (!aplicarATodo && seleccionados.size === 0) {
+      toast.warning("Selecciona al menos un producto");
+      return;
+    }
+
     setProcesando(true);
     try {
       // RUTA CORREGIDA
@@ -93,7 +100,8 @@ export default function ActualizadorPrecios() {
           tipoAccion: accion,
           tipoValor,
           valor: parseFloat(valor),
-          redondear
+          redondear,
+          aplicarATodo
         })
       });
 
@@ -133,13 +141,30 @@ export default function ActualizadorPrecios() {
                 </div>
                 
                 {/* Botón Seleccionar Todo */}
-                <button 
-                    onClick={toggleSelectAll}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all w-full sm:w-auto justify-center shadow-sm"
-                >
-                    {seleccionados.size > 0 && seleccionados.size === productos.length ? <CheckSquare size={16}/> : <Square size={16}/>}
-                    {seleccionados.size === productos.length ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
-                </button>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <button 
+                        onClick={toggleSelectAll}
+                        disabled={aplicarATodo}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-bold transition-all justify-center shadow-sm ${aplicarATodo ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'bg-white border-gray-200 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200'}`}
+                        title="Seleccionar los 100 visibles"
+                    >
+                        {seleccionados.size > 0 && seleccionados.size === productos.length ? <CheckSquare size={16}/> : <Square size={16}/>}
+                        <span className="hidden sm:inline">{seleccionados.size === productos.length ? 'Deseleccionar' : 'Sel. Visibles'}</span>
+                        <span className="sm:hidden">{seleccionados.size === productos.length ? 'Desel.' : 'Sel. Vis'}</span>
+                    </button>
+
+                    <button 
+                        onClick={() => {
+                            const newValue = !aplicarATodo;
+                            setAplicarATodo(newValue);
+                            if (newValue) setSeleccionados(new Set());
+                        }}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-black transition-all justify-center shadow-sm ${aplicarATodo ? 'bg-red-600 border-red-600 text-white shadow-red-200/50' : 'bg-white border-red-200 text-red-600 hover:bg-red-50'}`}
+                    >
+                        {aplicarATodo ? <CheckSquare size={16}/> : <AlertTriangle size={16}/>}
+                        ¡APLICAR A TODO!
+                    </button>
+                </div>
             </div>
 
             <div className="flex justify-between items-center text-xs text-gray-400 font-medium px-1">
@@ -264,11 +289,11 @@ export default function ActualizadorPrecios() {
 
             <div className="mt-8 pt-6 border-t border-gray-100">
                 <button 
-                    disabled={seleccionados.size === 0 || !valor}
+                    disabled={(!aplicarATodo && seleccionados.size === 0) || !valor}
                     onClick={() => setShowConfirm(true)}
                     className="w-full py-3.5 bg-gray-900 text-white font-bold rounded-xl shadow-lg hover:bg-gray-800 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                   <Save size={18}/> Actualizar ({seleccionados.size})
+                   <Save size={18}/> Actualizar {aplicarATodo ? 'TODO EL INVENTARIO' : `(${seleccionados.size})`}
                 </button>
             </div>
         </div>
@@ -287,11 +312,11 @@ export default function ActualizadorPrecios() {
                 
                 <div className="p-6 overflow-y-auto custom-scrollbar">
                     <p className="text-sm text-gray-600 mb-4">
-                        Modificarás el precio de <span className="font-bold">{seleccionados.size} productos</span>. Revisa la muestra:
+                        Modificarás el precio de <span className="font-bold">{aplicarATodo ? 'TODO el inventario' : `${seleccionados.size} productos`}</span>. Revisa la muestra:
                     </p>
                     
                     <div className="grid grid-cols-1 gap-2">
-                        {productos.filter(p => seleccionados.has(p.id)).slice(0, 50).map(p => {
+                        {productos.filter(p => aplicarATodo || seleccionados.has(p.id)).slice(0, 50).map(p => {
                             const nuevo = calcularSimulacion(p.precio);
                             const sube = nuevo > p.precio;
                             const baja = nuevo < p.precio;

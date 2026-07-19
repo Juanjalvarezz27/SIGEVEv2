@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/src/lib/prisma';
 import { auth } from '@/src/auth';
+import { gzipSync } from 'zlib';
 
 
 function obtenerInicioDiaVenezuelaUTC(fechaString: string): Date {
@@ -101,6 +102,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const periodo = searchParams.get('periodo') || 'hoy';
     const fecha = searchParams.get('fecha');
+    const soloDetalles = searchParams.get('soloDetalles') === 'true';
 
     let startDate: Date;
     let endDate: Date;
@@ -112,18 +114,56 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message || 'Error procesando fechas' }, { status: 400 });
     }
 
-    const ventas = await prisma.venta.findMany({
-      where: {
-        comercioId: session.user.comercioId,
-        fechaHora: { gte: startDate, lte: endDate },
-      },
-      include: {
-        productos: { include: { producto: true } },
-        metodoPago: true,
-        deuda: true,
-      },
-      orderBy: { fechaHora: 'asc' },
+    const baseWhere = {
+      comercioId: session.user.comercioId,
+      fechaHora: { gte: startDate, lte: endDate },
+    };
+
+    if (soloDetalles) {
+      const ventasDetalladas = await prisma.venta.findMany({
+        where: baseWhere,
+        take: 150,
+        orderBy: { fechaHora: 'desc' },
+        select: {
+          id: true,
+          fechaHora: true,
+          total: true,
+          totalBs: true,
+          tasaBCV: true,
+          referencia: true,
+          metodoPago: { select: { nombre: true } },
+          productos: {
+            select: { 
+               id: true,
+               cantidad: true, 
+               peso: true,
+               precioUnitario: true,
+               producto: { select: { porPeso: true, nombre: true } } 
+            }
+          },
+          deuda: true
+        }
+      });
+      const payload = JSON.stringify({ ventasDetalladas });
+      const compressed = gzipSync(Buffer.from(payload, 'utf-8'));
+      return new NextResponse(compressed, { status: 200, headers: { 'Content-Type': 'application/json', 'Content-Encoding': 'gzip' } });
+    }
+
+    const statsTotales = await prisma.venta.aggregate({
+      where: baseWhere,
+      _count: { id: true },
+      _sum: { total: true, totalBs: true }
     });
+
+    const productosVendidosDb = await prisma.ventaProducto.findMany({
+      where: { venta: baseWhere },
+      select: { cantidad: true, producto: { select: { porPeso: true } } }
+    });
+    const totalProductosVendidos = productosVendidosDb.reduce((acc, p) => acc + (p.producto.porPeso ? 1 : p.cantidad), 0);
+
+    // ventasGraficos eliminado a favor de agregaciones SQL crudas (Raw SQL)
+
+    // Ventas detalladas se cargan bajo demanda con soloDetalles=true
 
     // --- PROCESAMIENTO GRÁFICOS ---
     let graficoTendencia = [];
@@ -132,31 +172,20 @@ export async function GET(request: NextRequest) {
     if (esDiaUnico) {
       const horasMap = new Map<number, number>();
       
-      ventas.forEach(v => {
-        const fechaObj = new Date(v.fechaHora);
-
-        // Convertimos la hora UTC a Hora Venezuela (-4 horas) manualmente
-        // O usamos Intl para extraer la hora exacta en la zona horaria correcta
-        
-        const horaString = new Intl.DateTimeFormat('en-US', {
-            hour: 'numeric',
-            hour12: false,
-            timeZone: 'America/Caracas'
-        }).format(fechaObj);
-
-        // horaString puede ser "09", "13", "24" (si es medianoche 24h, ojo con formato)
-        // Parseamos a entero
-        const horaVzla = parseInt(horaString, 10);
-        
-        // Ajuste por si acaso Intl devuelve 24
-        const horaFinal = horaVzla === 24 ? 0 : horaVzla;
-
-        horasMap.set(horaFinal, (horasMap.get(horaFinal) || 0) + v.total);
-      });
+      const rawHoras = await prisma.$queryRaw<Array<{ hour: number, total: any }>>`
+        SELECT 
+          EXTRACT(HOUR FROM "fechaHora" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Caracas')::int as hour,
+          SUM(total) as total
+        FROM "Venta"
+        WHERE "comercioId" = ${session.user.comercioId} 
+          AND "fechaHora" >= ${startDate}::timestamp 
+          AND "fechaHora" <= ${endDate}::timestamp
+        GROUP BY 1
+      `;
+      rawHoras.forEach(r => horasMap.set(r.hour, Number(r.total)));
 
       const horaInicio = 8;
       const horaFin = 20;
-      // Ajustamos para incluir las horas reales encontradas
       const horasConVentas = Array.from(horasMap.keys());
       const minHora = horasConVentas.length > 0 ? Math.min(...horasConVentas, horaInicio) : horaInicio;
       const maxHora = horasConVentas.length > 0 ? Math.max(...horasConVentas, horaFin) : horaFin;
@@ -178,59 +207,68 @@ export async function GET(request: NextRequest) {
       const hoyVzla = obtenerFechaActualVenezuela();
       const { map: semanaMap, labels } = generarEstructuraSemana(hoyVzla);
       
-      ventas.forEach(v => {
-        // También aseguramos usar la fecha en zona horaria Vzla para la semana
-        const formato = new Intl.DateTimeFormat('en-CA', {
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            timeZone: 'America/Caracas'
-        });
-        const [y, m, d] = formato.format(new Date(v.fechaHora)).split('-');
-        const key = `${y}-${m}-${d}`;
-        
-        if (semanaMap.has(key)) semanaMap.set(key, (semanaMap.get(key) || 0) + v.total);
+      const rawDias = await prisma.$queryRaw<Array<{ date: string, total: any }>>`
+        SELECT 
+          TO_CHAR("fechaHora" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Caracas', 'YYYY-MM-DD') as date,
+          SUM(total) as total
+        FROM "Venta"
+        WHERE "comercioId" = ${session.user.comercioId} 
+          AND "fechaHora" >= ${startDate}::timestamp 
+          AND "fechaHora" <= ${endDate}::timestamp
+        GROUP BY 1
+      `;
+      rawDias.forEach(r => {
+        if (semanaMap.has(r.date)) semanaMap.set(r.date, (semanaMap.get(r.date) || 0) + Number(r.total));
       });
       
       const valores = Array.from(semanaMap.values());
       graficoTendencia = labels.map((dia, index) => ({ name: dia, total: valores[index] }));
     } else {
-        // MES (También ajustar zona horaria)
-        const ventasMap = new Map<string, number>();
-        ventas.forEach(v => {
-            const formato = new Intl.DateTimeFormat('en-CA', {
-                month: '2-digit', day: '2-digit',
-                timeZone: 'America/Caracas'
-            });
-            // formato devuelve "MM-DD" o "YYYY-MM-DD" dependiendo de config, en en-CA suele ser YYYY-MM-DD
-            // Aseguramos formato manual con partes
-            const fechaVzla = new Date(v.fechaHora).toLocaleDateString('es-VE', {timeZone: 'America/Caracas', day: '2-digit', month:'2-digit'});
-            // fechaVzla es "DD/MM"
-            const key = fechaVzla; 
-            
-            ventasMap.set(key, (ventasMap.get(key) || 0) + v.total);
-        });
-        graficoTendencia = Array.from(ventasMap.entries()).map(([name, total]) => ({ name, total }));
+        const rawMeses = await prisma.$queryRaw<Array<{ date: string, total: any }>>`
+          SELECT 
+            TO_CHAR("fechaHora" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Caracas', 'DD/MM') as date,
+            SUM(total) as total
+          FROM "Venta"
+          WHERE "comercioId" = ${session.user.comercioId} 
+            AND "fechaHora" >= ${startDate}::timestamp 
+            AND "fechaHora" <= ${endDate}::timestamp
+          GROUP BY 1
+          ORDER BY MIN("fechaHora") ASC
+        `;
+        graficoTendencia = rawMeses.map(r => ({ name: r.date, total: Number(r.total) }));
     }
 
-    const metodosMap = new Map<string, number>();
-    ventas.forEach(venta => {
-      const metodo = venta.metodoPago.nombre;
-      metodosMap.set(metodo, (metodosMap.get(metodo) || 0) + venta.total);
+    const metodosGroup = await prisma.venta.groupBy({
+      by: ['metodoPagoId'],
+      where: baseWhere,
+      _sum: { total: true }
     });
-    const graficoMetodos = Array.from(metodosMap.entries())
-      .map(([name, total]) => ({ name, total }))
+    const dbMetodos = await prisma.metodosPago.findMany();
+    const graficoMetodos = metodosGroup
+      .map(g => ({
+        name: dbMetodos.find(m => m.id === g.metodoPagoId)?.nombre || 'Otro',
+        total: g._sum.total || 0
+      }))
       .sort((a, b) => b.total - a.total);
 
-    const totalVentas = ventas.length;
-    const totalIngresosUSD = ventas.reduce((sum, venta) => sum + venta.total, 0);
-    const totalIngresosBs = ventas.reduce((sum, venta) => sum + venta.totalBs, 0);
-    const totalProductosVendidos = ventas.reduce((sum, venta) =>
-      sum + venta.productos.reduce((prodSum, prod) => prodSum + (prod.producto.porPeso ? 1 : prod.cantidad), 0), 0);
+    const totalVentas = statsTotales._count.id;
+    const totalIngresosUSD = statsTotales._sum.total || 0;
+    const totalIngresosBs = statsTotales._sum.totalBs || 0;
 
-    return NextResponse.json({
+    const payload = JSON.stringify({
       periodo: { tipo: periodo, fechaEspecifica: periodo === 'fecha-especifica' ? fecha : null },
       estadisticas: { totalVentas, totalIngresosUSD, totalIngresosBs, totalProductosVendidos },
-      graficos: { tendencia: graficoTendencia, metodos: graficoMetodos },
-      ventasDetalladas: ventas.reverse(),
+      graficos: { tendencia: graficoTendencia, metodos: graficoMetodos }
+    });
+
+    const compressed = gzipSync(Buffer.from(payload, 'utf-8'));
+
+    return new NextResponse(compressed, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Encoding': 'gzip'
+      }
     });
 
   } catch (error: any) {

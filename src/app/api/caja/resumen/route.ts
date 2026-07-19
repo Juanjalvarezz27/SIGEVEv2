@@ -18,46 +18,70 @@ export async function GET(req: Request) {
     // Si nunca ha cerrado, sumamos desde el principio de los tiempos (o una fecha muy vieja)
     const fechaInicio = ultimoCierre ? ultimoCierre.fecha : new Date(0);
 
-    // 2. Traer VENTAS desde esa fecha
-    const ventas = await prisma.venta.findMany({
+    // 2. Calcular total de VENTAS en BD
+    const ventasAgregadas = await prisma.venta.aggregate({
       where: {
         comercioId,
-        fechaHora: { gt: fechaInicio } // gt = greater than (mayor que)
+        fechaHora: { gt: fechaInicio }
       },
-      include: { metodoPago: true }
+      _sum: { total: true, totalBs: true }
+    });
+    const totalVentas = ventasAgregadas._sum.total || 0;
+    const totalVentasBs = ventasAgregadas._sum.totalBs || 0;
+
+    // 3. Calcular desglose de ventas por método de pago usando groupBy
+    const desgloseAgrupado = await prisma.venta.groupBy({
+      by: ['metodoPagoId'],
+      where: {
+        comercioId,
+        fechaHora: { gt: fechaInicio }
+      },
+      _sum: { total: true, totalBs: true }
     });
 
-    // 3. Traer GASTOS desde esa fecha
-    const gastos = await prisma.gasto.findMany({
+    // Traer los nombres de los métodos de pago usados
+    const metodosPago = await prisma.metodosPago.findMany({
+      where: {
+         id: { in: desgloseAgrupado.map(g => g.metodoPagoId).filter(Boolean) as string[] }
+      }
+    });
+
+    const porMetodo: any = {};
+    const porMetodoBs: any = {};
+    desgloseAgrupado.forEach(g => {
+        const metodo = metodosPago.find(m => m.id === g.metodoPagoId)?.nombre || 'Desconocido';
+        porMetodo[metodo] = g._sum.total || 0;
+        porMetodoBs[metodo] = g._sum.totalBs || 0;
+    });
+
+    // 4. Calcular total de GASTOS en BD
+    const gastosAgregados = await prisma.gasto.aggregate({
       where: {
         comercioId,
         fecha: { gt: fechaInicio }
       },
-      orderBy: { fecha: 'desc' }
+      _sum: { monto: true, montoBs: true }
     });
+    const totalGastos = gastosAgregados._sum.monto || 0;
+    const totalGastosBs = gastosAgregados._sum.montoBs || 0;
 
-    // 4. Calcular Totales
-    const totalVentas = ventas.reduce((sum, v) => sum + v.total, 0);
-    const totalGastos = gastos.reduce((sum, g) => sum + g.monto, 0);
+    // 5. Los gastos ahora se cargan por lazy loading en su propia vista (HistorialGastos)
+
     const totalEnCaja = totalVentas - totalGastos;
-
-    // Desglose por método (útil para el cuadre)
-    const porMetodo: any = {};
-    ventas.forEach(v => {
-        const metodo = v.metodoPago.nombre;
-        if (!porMetodo[metodo]) porMetodo[metodo] = 0;
-        porMetodo[metodo] += v.total;
-    });
+    const totalEnCajaBs = totalVentasBs - totalGastosBs;
 
     return NextResponse.json({
       resumen: {
         totalVentas,
+        totalVentasBs,
         totalGastos,
+        totalGastosBs,
         totalEnCaja,
+        totalEnCajaBs,
         inicioPeriodo: fechaInicio
       },
       desgloseVentas: porMetodo,
-      gastosRecientes: gastos
+      desgloseVentasBs: porMetodoBs
     });
 
   } catch (error: any) {

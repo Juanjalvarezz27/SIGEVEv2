@@ -3,12 +3,12 @@
 import { Package, Search, X, ChevronLeft, ChevronRight, Weight, Boxes, Plus, PackageOpen } from 'lucide-react';
 import { useRef } from 'react';
 
-// Interfaces
 interface Producto {
   id: string;
   nombre: string;
   precio: number;
   porPeso?: boolean | null;
+  unidad?: string | null;
   stock: number;
 }
 
@@ -61,7 +61,7 @@ export default function ProductosDisponibles({
   };
 
   return (
-    <div className="flex-1 bg-white md:rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[50vh] md:h-[calc(100vh-120px)] overflow-hidden">
+    <div className="flex-1 bg-white md:rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[50vh] md:h-full md:min-h-[calc(100vh-120px)] overflow-hidden">
 
       {/* --- HEADER --- */}
       <div className="p-5 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
@@ -97,7 +97,7 @@ export default function ProductosDisponibles({
       <div className="flex-1 overflow-y-auto p-5 custom-scrollbar bg-[#F8FAFC]" ref={containerRef}>
         {cargandoProductos ? (
           <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-3">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-indigo-100 border-t-indigo-600"></div>
             <p className="text-base font-medium animate-pulse">Cargando inventario...</p>
           </div>
         ) : productos.length === 0 ? (
@@ -147,7 +147,7 @@ export default function ProductosDisponibles({
                       </span>
                       {prod.porPeso && (
                         <span className="bg-orange-50 text-orange-700 border border-orange-100 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5">
-                          <Weight size={14}/> Kg
+                          <Weight size={14}/> {prod.unidad || 'kg'}
                         </span>
                       )}
                     </div>
@@ -165,7 +165,7 @@ export default function ProductosDisponibles({
                   {/* Overlay "En Carrito" */}
                   {enCarrito && (
                     <div className="absolute inset-x-0 bottom-0 bg-indigo-600 text-white text-xs font-bold py-1.5 px-3 flex justify-center items-center shadow-inner">
-                       En carrito: {prod.porPeso ? `${enCarrito.peso} kg` : `${enCarrito.cantidad} un`}
+                       En carrito: {prod.porPeso ? `${enCarrito.peso} ${prod.unidad || 'kg'}` : `${enCarrito.cantidad} un`}
                     </div>
                   )}
                 </button>

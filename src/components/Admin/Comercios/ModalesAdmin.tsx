@@ -191,6 +191,14 @@ interface ModalEliminarProps {
 }
 
 export function ModalEliminar({ isOpen, onClose, onConfirm, nombreItem, loading }: ModalEliminarProps) {
+  const [confirmText, setConfirmText] = useState("");
+
+  useEffect(() => {
+    if (isOpen) {
+      setConfirmText("");
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -213,14 +221,25 @@ export function ModalEliminar({ isOpen, onClose, onConfirm, nombreItem, loading 
             <p className="text-gray-500 text-sm leading-relaxed">
                 Estás a punto de borrar este comercio, su usuario dueño y <strong>todo su historial de ventas</strong>.
             </p>
-            <div className="text-gray-800 font-bold text-xs bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center gap-2 justify-center">
+            <div className="text-gray-800 font-bold text-xs bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center gap-2 justify-center mb-3">
                 ⚠️ Esta acción es irreversible.
+            </div>
+            
+            <div className="text-left mt-4">
+               <label className="block text-xs font-bold text-gray-500 mb-2">Escribe <span className="text-red-500 select-all">ELIMINAR</span> para confirmar:</label>
+               <input 
+                 type="text"
+                 value={confirmText}
+                 onChange={(e) => setConfirmText(e.target.value)}
+                 className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-red-500 focus:ring-4 focus:ring-red-100 outline-none transition-all font-bold text-gray-700 uppercase"
+                 placeholder="ELIMINAR"
+               />
             </div>
         </div>
 
         <div className="p-4 border-t border-gray-100 bg-gray-50 flex gap-3">
             <button onClick={onClose} disabled={loading} className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-bold hover:bg-gray-100 transition-colors text-sm">Cancelar</button>
-            <button onClick={onConfirm} disabled={loading} className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-lg shadow-red-200 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm">
+            <button onClick={onConfirm} disabled={loading || confirmText.toUpperCase() !== 'ELIMINAR'} className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-lg shadow-red-200 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                 {loading ? <Loader2 className="animate-spin" size={16}/> : <><Trash2 size={16}/> Sí, Eliminar</>}
             </button>
         </div>

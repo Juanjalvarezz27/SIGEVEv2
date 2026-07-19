@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import {
   Eye, ShoppingBag, X, CheckCircle2,
-  Send, CreditCard, User, FileText, Calendar
+  Send, CreditCard, User, FileText, Calendar, Receipt
 } from 'lucide-react';
 
 interface Venta {
@@ -11,6 +11,7 @@ interface Venta {
   total: number;
   totalBs: number;
   fechaHora: string;
+  referencia?: string | null;
   metodoPago: { nombre: string };
   productos: any[];
   deuda?: {
@@ -37,9 +38,14 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
   };
 
   const formatFecha = (fecha: string) => {
-    return new Date(fecha).toLocaleTimeString('es-VE', {
+    const timeString = new Date(fecha).toLocaleTimeString('en-US', {
       hour: 'numeric', minute: '2-digit', hour12: true
     });
+    return (
+      <span className="bg-gray-100 text-gray-600 font-bold px-2.5 py-1 rounded-md text-[11px] uppercase tracking-wider border border-gray-200 whitespace-nowrap shadow-sm">
+        {timeString}
+      </span>
+    );
   };
 
   const enviarPorWhatsApp = () => {
@@ -55,9 +61,26 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
         ? (ventaSeleccionada.totalBs / ventaSeleccionada.total).toFixed(2) 
         : "0.00";
 
+    // --- ANTI-SPAM WHATSAPP: Randomización ---
+    const intros = [
+      "*RESUMEN DE COMPRA (NO FISCAL)*", 
+      "*NOTA DE ENTREGA (NO FISCAL)*", 
+      "*DETALLE DE VENTA (NO FISCAL)*", 
+      "*RECIBO DIGITAL (NO FISCAL)*"
+    ];
+    const agradecimientos = [
+      "¡Gracias por tu compra!", 
+      "¡Gracias por preferirnos!", 
+      "¡Esperamos verte pronto!", 
+      "¡Que tengas un excelente día!"
+    ];
+    const introRandom = intros[Math.floor(Math.random() * intros.length)];
+    const agradecimientoRandom = agradecimientos[Math.floor(Math.random() * agradecimientos.length)];
+    const randomHash = Math.random().toString(36).substring(2, 7).toUpperCase();
+
     // --- CAMBIO 1: TÍTULO DEL MENSAJE DE WHATSAPP ---
-    let mensaje = `*RESUMEN DE COMPRA (NO FISCAL)*\n`; 
-    mensaje += `${fechaStr} - ${horaStr}\n`;
+    let mensaje = `${introRandom}\n`; 
+    mensaje += `Ref: #${randomHash} | ${fechaStr} - ${horaStr}\n`;
     mensaje += `--------------------------------\n`;
 
     // 4. Cuerpo (Productos o Deuda)
@@ -77,7 +100,7 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
     } else {
       mensaje += `*Detalle:*\n`;
       ventaSeleccionada.productos.forEach(p => {
-        const unidad = p.peso ? 'kg' : 'und'; 
+        const unidad = p.producto?.unidad || (p.peso ? 'kg' : 'und');
         const cantidadStr = p.peso ? p.peso : p.cantidad;
         mensaje += `• ${cantidadStr} ${unidad} x ${p.producto.nombre}\n`;
       });
@@ -90,10 +113,14 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
     mensaje += `Bs: ${ventaSeleccionada.totalBs.toFixed(2)}\n`;
     mensaje += `Ref. Tasa: Bs ${tasaCalculada}\n\n`;
     mensaje += `Método: ${ventaSeleccionada.metodoPago.nombre}\n`;
+    if (ventaSeleccionada.referencia) {
+      mensaje += `Ref. Pago: ${ventaSeleccionada.referencia}\n`;
+    }
     
     // --- CAMBIO 2: PIE DE PÁGINA LEGAL ---
     mensaje += `--------------------------------\n`;
-    mensaje += `_Este es un resumen de operación interna y NO sustituye la Factura Fiscal._`;
+    mensaje += `_Este es un resumen de operación interna y NO sustituye la Factura Fiscal._\n`;
+    mensaje += `\n${agradecimientoRandom}`;
 
     // 7. Enviar
     let numeroFinal = telefonoReceptor.replace(/\D/g, '');
@@ -182,29 +209,23 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-        <h3 className="font-bold text-gray-800 text-lg">Movimientos del Día</h3>
-        <span className="text-xs font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
-          {ventas.length} Transacciones
-        </span>
-      </div>
-
+    <>
       <div className="overflow-x-auto">
         <table className="w-full min-w-full text-left border-collapse block md:table">
           <thead className="hidden md:table-header-group">
             <tr className="text-xs text-gray-500 uppercase bg-gray-50/50 border-b border-gray-100">
               <th className="px-6 py-4 font-semibold w-24">Hora</th>
               <th className="px-6 py-4 font-semibold">Tipo y Método</th>
+              <th className="px-6 py-4 font-semibold">Referencia</th>
               <th className="px-6 py-4 font-semibold text-right">Total Bs</th>
               <th className="px-6 py-4 font-semibold text-right">Total $</th>
-              <th className="px-6 py-4 font-semibold text-center w-20">Ver</th>
+              <th className="px-6 py-4 font-semibold text-right w-32">Acción</th>
             </tr>
           </thead>
           <tbody className="divide-y-0 md:divide-y divide-gray-50 block md:table-row-group">
             {ventas.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-gray-400 text-sm block md:table-cell">
+                <td colSpan={6} className="px-6 py-12 text-center text-gray-400 text-sm block md:table-cell">
                   No hay ventas registradas hoy.
                 </td>
               </tr>
@@ -232,6 +253,12 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
                         </span>
                     </div>
                   </td>
+                  <td className="px-4 md:px-6 py-2 md:py-4 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
+                    <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Referencia</span>
+                    <span className="text-xs text-gray-600 font-medium tracking-wide">
+                      {venta.referencia ? `#${venta.referencia}` : "-"}
+                    </span>
+                  </td>
                   <td className="px-4 md:px-6 py-2 md:py-4 text-right font-bold text-indigo-600 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
                     <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Total Bs</span>
                     <span>Bs {venta.totalBs.toFixed(2)}</span>
@@ -240,14 +267,14 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
                     <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Total $</span>
                     <span>$ {venta.total.toFixed(2)}</span>
                   </td>
-                  <td className="px-4 md:px-6 py-3 md:py-4 text-center md:table-cell">
+                  <td className="px-4 md:px-6 py-3 md:py-4 text-right md:table-cell">
                     <button
                       onClick={() => abrirRecibo(venta)}
-                      className="w-full md:w-auto p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all active:scale-95 flex justify-center items-center gap-2 border border-gray-200 md:border-0"
+                      className="w-full md:w-auto px-3 py-2 text-indigo-600 hover:text-white bg-indigo-50 hover:bg-indigo-600 rounded-lg transition-all active:scale-95 flex justify-center items-center gap-1.5 font-bold text-xs border border-indigo-100 shadow-sm ml-auto whitespace-nowrap"
                       title="Ver Nota de Entrega"
                     >
-                      <Eye size={18} />
-                      <span className="md:hidden text-sm font-semibold">Ver Recibo</span>
+                      <Eye size={16} />
+                      <span>Ver Recibo</span>
                     </button>
                   </td>
                 </tr>
@@ -316,8 +343,8 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
                       {ventaSeleccionada.productos.map((item, idx) => (
                         <div key={idx} className="flex justify-between items-center py-2 px-2 border-b border-gray-100 last:border-0 hover:bg-white hover:shadow-sm rounded-lg transition-all">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className="bg-white h-8 w-8 flex items-center justify-center rounded-lg text-xs font-bold text-gray-600 border border-gray-200 shadow-sm flex-shrink-0">
-                              {item.cantidad}
+                            <div className="bg-white h-8 min-w-[32px] px-2 w-auto flex items-center justify-center rounded-lg text-[11px] font-bold text-gray-600 border border-gray-200 shadow-sm flex-shrink-0">
+                              {item.cantidad} {item.producto?.porPeso ? (item.producto.unidad || 'kg') : 'un'}
                             </div>
                             <div className="flex flex-col flex-1 min-w-0">
                                 <span className="text-sm font-semibold text-gray-700 truncate">
@@ -342,6 +369,15 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
                 </span>
                 <span className="font-bold uppercase text-gray-800">{ventaSeleccionada.metodoPago.nombre}</span>
               </div>
+              
+              {ventaSeleccionada.referencia && (
+                <div className="flex justify-between items-center text-xs bg-white p-4 rounded-xl border border-gray-100 text-gray-500 mt-2 shadow-sm">
+                  <span className="flex items-center gap-2 font-semibold">
+                    <Receipt size={14}/> Referencia
+                  </span>
+                  <span className="font-mono font-bold text-gray-800 break-all max-w-[50%] text-right">{ventaSeleccionada.referencia}</span>
+                </div>
+              )}
             </div>
 
             <div className="p-5 border-t border-gray-100 bg-white flex-shrink-0">
@@ -376,6 +412,6 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Save, Phone, Search, Plus, Trash2, ShoppingCart, Package, AlertCircle, Minus, Weight, ChevronLeft, ChevronRight, User, Check, FileText, DollarSign } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -15,7 +16,7 @@ interface DeudaFormModalProps {
 const ITEMS_PER_PAGE = 20;
 
 export default function DeudaFormModal({ isOpen, onClose, onSubmit, initialData, tipo }: DeudaFormModalProps) {
-  const [formData, setFormData] = useState({ persona: "", telefono: "" });
+  const [formData, setFormData] = useState({ persona: "", telefono: "", cedula: "" });
   
   // Datos
   const [productos, setProductos] = useState<any[]>([]);
@@ -63,9 +64,10 @@ export default function DeudaFormModal({ isOpen, onClose, onSubmit, initialData,
             .then(res => res.json())
             .then(data => {
                 const unicos = new Map();
-                data.forEach((d: any) => {
+                const deudasArray = Array.isArray(data) ? data : (data.deudas || []);
+                deudasArray.forEach((d: any) => {
                     if (!unicos.has(d.persona.toLowerCase())) {
-                        unicos.set(d.persona.toLowerCase(), { persona: d.persona, telefono: d.telefono });
+                        unicos.set(d.persona.toLowerCase(), { persona: d.persona, telefono: d.telefono, cedula: d.cedula || "" });
                     }
                 });
                 setDeudoresExistentes(Array.from(unicos.values()));
@@ -82,7 +84,10 @@ export default function DeudaFormModal({ isOpen, onClose, onSubmit, initialData,
       const valor = e.target.value;
       setFormData({ ...formData, persona: valor });
       if (valor.length > 1) {
-          const filtrados = deudoresExistentes.filter(d => d.persona.toLowerCase().includes(valor.toLowerCase()));
+          const filtrados = deudoresExistentes.filter(d => 
+              d.persona.toLowerCase().includes(valor.toLowerCase()) || 
+              (d.cedula && d.cedula.toLowerCase().includes(valor.toLowerCase()))
+          );
           setSugerencias(filtrados);
           setMostrarSugerencias(true);
       } else {
@@ -91,7 +96,7 @@ export default function DeudaFormModal({ isOpen, onClose, onSubmit, initialData,
   };
 
   const seleccionarDeudor = (deudor: any) => {
-      setFormData({ persona: deudor.persona, telefono: deudor.telefono || "" });
+      setFormData({ persona: deudor.persona, telefono: deudor.telefono || "", cedula: deudor.cedula || "" });
       setMostrarSugerencias(false);
       toast.success(`${tipo === "COBRAR" ? 'Cliente' : 'Proveedor'} seleccionado`);
   };
@@ -99,7 +104,7 @@ export default function DeudaFormModal({ isOpen, onClose, onSubmit, initialData,
   // PARSER (EDITAR)
   useEffect(() => {
     if (initialData) {
-      setFormData({ persona: initialData.persona, telefono: initialData.telefono || "" });
+      setFormData({ persona: initialData.persona, telefono: initialData.telefono || "", cedula: initialData.cedula || "" });
       
       if (tipo === "PAGAR") {
           setNotasExtra(initialData.descripcion || "");
@@ -154,7 +159,7 @@ export default function DeudaFormModal({ isOpen, onClose, onSubmit, initialData,
       }
 
     } else {
-      setFormData({ persona: "", telefono: "" });
+      setFormData({ persona: "", telefono: "", cedula: "" });
       setCarrito([]);
       setPesoInputs({});
       setNotasExtra("");
@@ -251,10 +256,10 @@ export default function DeudaFormModal({ isOpen, onClose, onSubmit, initialData,
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 animate-in fade-in" onClick={(e) => e.target === e.currentTarget && onClose()}>
+  const modalContent = (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 p-4 animate-in fade-in" onClick={(e) => e.target === e.currentTarget && onClose()}>
       
-      <div className="bg-white rounded-2xl w-full max-w-6xl shadow-2xl flex flex-col relative h-[85vh] animate-in zoom-in-95 duration-200 overflow-hidden border border-gray-200 my-auto">
+      <div className="bg-white rounded-2xl w-full max-w-4xl shadow-2xl flex flex-col relative h-[85vh] animate-in zoom-in-95 duration-200 overflow-hidden border border-gray-200 my-auto">
         
         {/* HEADER */}
         <div className={`flex justify-between items-center px-8 py-5 border-b border-gray-100 flex-shrink-0 ${tipo === "PAGAR" ? 'bg-orange-50' : 'bg-white'}`}>
@@ -272,8 +277,8 @@ export default function DeudaFormModal({ isOpen, onClose, onSubmit, initialData,
         <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar bg-[#F8FAFC]">
           
           {/* DATOS CLIENTE */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="relative">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="relative col-span-1 md:col-span-1">
                 <div className={`bg-white px-4 py-2.5 rounded-xl border transition-all flex items-center gap-3 relative z-20 shadow-sm ${!formData.persona ? 'border-gray-300' : 'border-indigo-300 ring-1 ring-indigo-50'}`}>
                     <User size={20} className="text-gray-400"/>
                     <div className="flex-1">
@@ -286,12 +291,19 @@ export default function DeudaFormModal({ isOpen, onClose, onSubmit, initialData,
                         <div className="p-3 text-xs text-gray-400 font-bold uppercase bg-gray-50">Encontrados</div>
                         {sugerencias.map((s, i) => (
                             <button key={i} type="button" onClick={() => seleccionarDeudor(s)} className="w-full text-left px-5 py-3 hover:bg-indigo-50 text-base text-gray-700 flex justify-between items-center group border-b border-gray-50 last:border-0 transition-colors">
-                                <span className="font-medium group-hover:text-indigo-700">{s.persona}</span>
+                                <span className="font-medium group-hover:text-indigo-700">{s.persona} {s.cedula && <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded ml-2">{s.cedula}</span>}</span>
                                 <span className="text-sm text-gray-400 group-hover:text-indigo-500 flex items-center gap-1"><Phone size={14}/> {s.telefono}</span>
                             </button>
                         ))}
                     </div>
                 )}
+            </div>
+
+            <div className={`bg-white px-4 py-2.5 rounded-xl border transition-all flex items-center gap-3 shadow-sm ${formData.cedula.length > 0 ? 'border-gray-200' : 'border-gray-200'}`}>
+                <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-0.5">Cédula / RIF</label>
+                    <input className="w-full bg-transparent outline-none font-medium text-gray-600 text-base placeholder:text-gray-300" placeholder="Ej: V-12345678" value={formData.cedula} onChange={e => setFormData({...formData, cedula: e.target.value})} />
+                </div>
             </div>
 
             <div className={`bg-white px-4 py-2.5 rounded-xl border transition-all flex items-center gap-3 shadow-sm ${formData.telefono.length > 0 && formData.telefono.length !== 11 ? 'border-red-200' : 'border-gray-200'}`}>
@@ -349,82 +361,91 @@ export default function DeudaFormModal({ isOpen, onClose, onSubmit, initialData,
                 </div>
              </div>
           ) : (
-            // --- MODO CARRITO ---
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full min-h-[400px]">
-                {/* ... (Código de lista de productos y carrito) ... */}
-                <div className="lg:col-span-7 border border-gray-200 rounded-2xl flex flex-col h-full bg-white overflow-hidden shadow-sm">
-                    <div className="p-3 border-b border-gray-100 bg-gray-50/50">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
-                            <input className="w-full pl-10 p-2.5 rounded-lg border border-gray-200 outline-none focus:border-indigo-500 text-sm font-medium bg-white transition-all shadow-sm" placeholder="Buscar producto..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-                        </div>
+            // --- MODO CARRITO REDISEÑADO ---
+            <div className="flex flex-col space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                {/* BUSCADOR DE PRODUCTOS (Autocomplete Style) */}
+                <div className="relative z-40">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 ml-1">Buscar y agregar producto</label>
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
+                        <input 
+                            className="w-full pl-10 p-3.5 rounded-xl border border-gray-200 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 text-base font-medium bg-white transition-all shadow-sm" 
+                            placeholder="Ej: Harina Pan, Arroz..." 
+                            value={busqueda} 
+                            onChange={(e) => setBusqueda(e.target.value)} 
+                        />
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-white">
-                        {cargandoProductos ? <div className="text-center py-20 text-gray-400">Cargando...</div> : productosFiltrados.length === 0 ? <div className="text-center py-20 text-gray-400">Sin resultados</div> :
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {paginatedProducts.map((prod) => (
-                                <button type="button" key={prod.id} onClick={() => agregarAlCarrito(prod)} className="w-full bg-white p-3 rounded-xl border border-gray-100 flex justify-between items-center hover:border-indigo-500 hover:shadow-md transition-all text-left group">
-                                    <div className="flex-1 min-w-0 pr-3">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <p className="font-bold text-gray-700 text-sm truncate group-hover:text-indigo-700">{prod.nombre}</p>
-                                            {prod.porPeso && <span className="bg-yellow-50 text-yellow-700 border border-yellow-200 text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0">Kg</span>}
-                                        </div>
-                                        <p className="text-xs text-gray-400 font-mono group-hover:text-indigo-500 font-medium">${prod.precio}</p>
+                    {/* RESULTADOS DEL BUSCADOR */}
+                    {busqueda.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 max-h-60 overflow-y-auto ring-1 ring-black/5 custom-scrollbar">
+                            {cargandoProductos ? <div className="p-4 text-center text-sm text-gray-400">Cargando catálogo...</div> : 
+                             productosFiltrados.length === 0 ? <div className="p-4 text-center text-sm text-gray-400">No se encontraron productos</div> :
+                             productosFiltrados.slice(0, 15).map(prod => (
+                                <button type="button" key={prod.id} onClick={() => { agregarAlCarrito(prod); setBusqueda(''); }} className="w-full text-left px-4 py-3 hover:bg-indigo-50 flex justify-between items-center group border-b border-gray-50 last:border-0 transition-colors">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-gray-700 group-hover:text-indigo-700 text-sm">{prod.nombre}</span>
+                                        {prod.porPeso && <span className="bg-yellow-50 text-yellow-700 border border-yellow-200 text-[10px] px-2 py-0.5 rounded-full font-bold">Kg</span>}
                                     </div>
-                                    <div className="h-8 w-8 bg-gray-50 text-gray-400 rounded-lg flex-shrink-0 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all"><Plus size={18} strokeWidth={2.5}/></div>
+                                    <span className="text-sm font-mono text-gray-500 group-hover:text-indigo-600 font-bold">${prod.precio}</span>
                                 </button>
                             ))}
-                          </div>
-                        }
-                    </div>
-                    {totalPages > 1 && (
-                        <div className="p-3 border-t border-gray-100 bg-gray-50 flex justify-between items-center text-xs text-gray-500 font-medium">
-                            <span>Página {currentPage} de {totalPages}</span>
-                            <div className="flex gap-2">
-                                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 rounded-lg bg-white border hover:bg-gray-100 disabled:opacity-50"><ChevronLeft size={16}/></button>
-                                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 rounded-lg bg-white border hover:bg-gray-100 disabled:opacity-50"><ChevronRight size={16}/></button>
-                            </div>
                         </div>
                     )}
                 </div>
-                <div className="lg:col-span-5 flex flex-col h-full">
-                    <div className="bg-white border-2 border-indigo-50 rounded-2xl flex-1 flex flex-col shadow-xl shadow-indigo-50/50 overflow-hidden">
-                        <div className="bg-indigo-50/50 p-4 border-b border-indigo-100 flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-indigo-900 font-bold text-sm"><ShoppingCart size={20}/> Pedido Actual</div>
-                            <span className="text-xs bg-white text-indigo-600 px-2.5 py-1 rounded-lg font-bold shadow-sm border border-indigo-100">{carrito.length} Items</span>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar bg-white">
-                            {carrito.length === 0 ? <div className="h-full flex flex-col items-center justify-center text-gray-300 opacity-60"><Package size={48} className="mb-3 stroke-1"/><p className="text-sm font-medium text-center">Selecciona productos</p></div> : 
-                                carrito.map((item, idx) => (
-                                    <div key={idx} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3 group hover:border-indigo-100 transition-colors">
-                                        <div className="w-[5rem] flex-shrink-0">
-                                            {item.porPeso ? (
-                                                <div className="relative">
-                                                    <input type="number" className="w-full text-center font-bold text-indigo-600 bg-gray-50 border border-gray-100 rounded-lg py-1.5 text-xs outline-none focus:border-indigo-500 focus:bg-white transition-all" value={pesoInputs[item.id] !== undefined ? pesoInputs[item.id] : item.cantidad} onChange={(e) => handlePesoChange(item.id, e.target.value)} step="any" placeholder="0.0" />
-                                                    <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[8px] text-gray-400 font-bold pointer-events-none">KG</span>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center bg-gray-50 border border-gray-100 rounded-lg overflow-hidden h-7">
-                                                    <button type="button" onClick={() => cambiarCantidadUnidad(item.id, -1)} className="px-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-200 h-full"><Minus size={12}/></button>
-                                                    <span className="flex-1 text-center text-xs font-bold text-gray-700">{item.cantidad}</span>
-                                                    <button type="button" onClick={() => cambiarCantidadUnidad(item.id, 1)} className="px-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-200 h-full"><Plus size={12}/></button>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0 px-1">
-                                            <p className="text-gray-800 font-bold text-xs truncate leading-tight">{item.nombre}</p>
-                                            <p className="text-[10px] text-gray-400 mt-0.5">${item.precio} c/u</p>
-                                        </div>
-                                        <div className="text-right flex-shrink-0">
-                                            <p className="font-black text-gray-900 text-sm">${item.subtotal.toFixed(2)}</p>
-                                            <button onClick={() => eliminarDelCarrito(item.id)} className="text-gray-300 hover:text-red-500 mt-1"><Trash2 size={14}/></button>
-                                        </div>
+
+                {/* LISTA DE PRODUCTOS AGREGADOS */}
+                <div className="bg-white border border-gray-200 rounded-2xl flex flex-col shadow-sm overflow-hidden">
+                    <div className="bg-gray-50 p-3.5 border-b border-gray-100 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-gray-700 font-bold text-sm"><ShoppingCart size={18}/> Lista de Artículos</div>
+                        <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md font-bold">{carrito.length} Ítems</span>
+                    </div>
+                    
+                    <div className="p-4 space-y-2 bg-white relative z-10 min-h-[150px]">
+                        {carrito.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-8 text-gray-300 opacity-80">
+                                <Package size={40} className="mb-3 stroke-1 text-gray-200"/>
+                                <p className="text-sm font-medium text-center text-gray-400">Busca y agrega productos arriba</p>
+                            </div>
+                        ) : (
+                            carrito.map((item, idx) => (
+                                <div key={idx} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 group hover:border-indigo-200 transition-colors">
+                                    {/* Control Cantidad/Peso */}
+                                    <div className="w-[6rem] flex-shrink-0">
+                                        {item.porPeso ? (
+                                            <div className="relative">
+                                                <input type="number" className="w-full text-center font-bold text-indigo-600 bg-gray-50 border border-gray-200 rounded-lg py-1.5 text-sm outline-none focus:border-indigo-500 focus:bg-white transition-all" value={pesoInputs[item.id] !== undefined ? pesoInputs[item.id] : item.cantidad} onChange={(e) => handlePesoChange(item.id, e.target.value)} step="any" placeholder="0.0" />
+                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 font-bold pointer-events-none">KG</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg overflow-hidden h-8">
+                                                <button type="button" onClick={() => cambiarCantidadUnidad(item.id, -1)} className="px-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-200 h-full transition-colors"><Minus size={14}/></button>
+                                                <span className="flex-1 text-center text-sm font-bold text-gray-800">{item.cantidad}</span>
+                                                <button type="button" onClick={() => cambiarCantidadUnidad(item.id, 1)} className="px-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-200 h-full transition-colors"><Plus size={14}/></button>
+                                            </div>
+                                        )}
                                     </div>
-                                ))
-                            }
-                        </div>
-                        <div className="bg-white p-5 border-t border-gray-100 z-10">
-                            <div className="flex justify-between items-center"><span className="text-gray-400 font-bold text-xs uppercase tracking-wider">Total Final</span><span className="text-3xl font-black text-indigo-600 tracking-tight">${totalCarrito.toFixed(2)}</span></div>
+                                    
+                                    {/* Info */}
+                                    <div className="flex-1 min-w-0 pr-2">
+                                        <p className="text-gray-900 font-bold text-sm truncate">{item.nombre}</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">${item.precio} c/u</p>
+                                    </div>
+                                    
+                                    {/* Subtotal & Delete */}
+                                    <div className="flex items-center gap-4 flex-shrink-0">
+                                        <p className="font-black text-gray-900 text-base w-16 text-right">${item.subtotal.toFixed(2)}</p>
+                                        <button onClick={() => eliminarDelCarrito(item.id)} className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors"><Trash2 size={16}/></button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                    
+                    {/* TOTAL */}
+                    <div className="bg-gray-50 p-4 border-t border-gray-200 z-10">
+                        <div className="flex justify-between items-center">
+                            <span className="text-gray-500 font-bold text-sm uppercase tracking-wider">Total de la Deuda</span>
+                            <span className="text-3xl font-black text-indigo-600 tracking-tight">${totalCarrito.toFixed(2)}</span>
                         </div>
                     </div>
                 </div>
@@ -444,4 +465,6 @@ export default function DeudaFormModal({ isOpen, onClose, onSubmit, initialData,
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
