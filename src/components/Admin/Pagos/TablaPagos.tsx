@@ -56,8 +56,8 @@ export default function TablaPagos({ dataInicial }: { dataInicial: Pago[] }) {
     <>
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-gray-400 uppercase bg-gray-50 border-b border-gray-100">
+          <table className="w-full text-sm text-left block md:table">
+            <thead className="text-xs text-gray-400 uppercase bg-gray-50 border-b border-gray-100 hidden md:table-header-group">
               <tr>
                 <th className="px-6 py-4 font-bold">Fecha</th>
                 <th className="px-6 py-4 font-bold">Comercio</th>
@@ -67,47 +67,53 @@ export default function TablaPagos({ dataInicial }: { dataInicial: Pago[] }) {
                 <th className="px-6 py-4 font-bold text-center">Acción</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y-0 md:divide-y divide-gray-100 block md:table-row-group">
               {pagos.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-10 text-center text-gray-400 italic">No hay pagos registrados aún.</td>
+                  <td colSpan={6} className="p-10 text-center text-gray-400 italic block md:table-cell">No hay pagos registrados aún.</td>
                 </tr>
               ) : (
                 pagos.map((pago) => (
-                  <tr key={pago.id} className="hover:bg-gray-50/80 transition-colors group">
-                    <td className="px-6 py-4 text-gray-500 font-medium">
+                  <tr key={pago.id} className="hover:bg-gray-50/80 transition-colors group block md:table-row border border-gray-200 md:border-0 rounded-xl md:rounded-none mb-4 md:mb-0 bg-white p-4 md:p-0">
+                    <td className="px-0 md:px-6 py-2 md:py-4 text-gray-500 font-medium flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
+                      <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Fecha</span>
                       <div className="flex items-center gap-2">
                         <Calendar size={14} className="text-gray-400"/>
                         {new Date(pago.fecha).toLocaleDateString()} 
                       </div>
                     </td>
-                    <td className="px-6 py-4 font-bold text-gray-800">
-                      {pago.comercio.nombre}
+                    <td className="px-0 md:px-6 py-2 md:py-4 font-bold text-gray-800 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
+                      <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Comercio</span>
+                      <span>{pago.comercio.nombre}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-0 md:px-6 py-2 md:py-4 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
+                      <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Método</span>
                       <span className="px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-600 shadow-sm">
                         {pago.metodo}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-600">
+                    <td className="px-0 md:px-6 py-2 md:py-4 text-gray-600 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100 text-right md:text-left">
+                      <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Detalle</span>
                       <div className="flex flex-col">
                         <span className="font-mono text-xs text-indigo-500">{pago.referencia || "---"}</span>
                         <span className="text-[11px] text-gray-400">{pago.nota}</span>
                         {pago.meses ? <span className="text-[10px] text-emerald-600 font-bold">+{pago.meses} Meses</span> : null}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-0 md:px-6 py-2 md:py-4 text-right flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
+                      <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Monto</span>
                       <span className="text-emerald-600 font-black bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100">
                         +${pago.monto.toFixed(2)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-0 md:px-6 py-3 md:py-4 text-center md:table-cell flex justify-end md:justify-center pt-4 md:pt-4">
                       <button 
                           onClick={() => handleClickEliminar(pago.id, pago.meses)} 
-                          className="p-2 hover:bg-red-50 text-gray-300 hover:text-red-500 rounded-lg transition-colors"
+                          className="p-2 bg-red-50 hover:bg-red-100 md:bg-transparent md:hover:bg-red-50 text-red-500 md:text-gray-300 md:hover:text-red-500 rounded-lg transition-colors flex items-center justify-center gap-2"
                           title="Eliminar registro"
                       >
                           <Trash2 size={16}/>
+                          <span className="md:hidden text-xs font-bold uppercase tracking-wider">Eliminar</span>
                       </button>
                     </td>
                   </tr>

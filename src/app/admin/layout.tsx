@@ -23,7 +23,7 @@ export default async function AdminLayout({
   return (
     <div className="bg-slate-50 min-h-screen">
       <Navbar user={session.user as any} />
-      <main className="max-w-7xl mx-auto p-6">
+      <main className="max-w-7xl mx-auto px-2 py-4 md:p-6">
         {children}
       </main>
     </div>

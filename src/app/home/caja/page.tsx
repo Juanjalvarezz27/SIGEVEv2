@@ -53,7 +53,7 @@ export default function CajaPage() {
   if (loading && !data) return <div className="p-10 text-center text-gray-400">Cargando caja...</div>;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto min-h-screen pb-20">
+    <div className="w-full max-w-7xl mx-auto min-h-screen pb-20">
       
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">

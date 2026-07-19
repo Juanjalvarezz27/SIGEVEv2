@@ -10,7 +10,7 @@ export default function ConfiguracionPage() {
   const [activeTab, setActiveTab] = useState<'perfil' | 'negocio' | 'precios'>('perfil');
 
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto min-h-screen pb-24 overflow-x-hidden">
+    <div className="w-full max-w-6xl mx-auto min-h-screen pb-24 overflow-x-hidden">
 
       {/* Header */}
       <div className="mb-6 md:mb-8">

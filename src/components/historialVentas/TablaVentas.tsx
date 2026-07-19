@@ -191,8 +191,8 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
+        <table className="w-full min-w-full text-left border-collapse block md:table">
+          <thead className="hidden md:table-header-group">
             <tr className="text-xs text-gray-500 uppercase bg-gray-50/50 border-b border-gray-100">
               <th className="px-6 py-4 font-semibold w-24">Hora</th>
               <th className="px-6 py-4 font-semibold">Tipo y Método</th>
@@ -201,20 +201,22 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
               <th className="px-6 py-4 font-semibold text-center w-20">Ver</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y-0 md:divide-y divide-gray-50 block md:table-row-group">
             {ventas.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-gray-400 text-sm">
+                <td colSpan={5} className="px-6 py-12 text-center text-gray-400 text-sm block md:table-cell">
                   No hay ventas registradas hoy.
                 </td>
               </tr>
             ) : (
               ventas.map((venta) => (
-                <tr key={venta.id} className="hover:bg-gray-50/80 transition-colors group">
-                  <td className="px-6 py-4 text-sm text-gray-500 font-medium whitespace-nowrap">
-                    {formatFecha(venta.fechaHora)}
+                <tr key={venta.id} className="hover:bg-gray-50/80 transition-colors group block md:table-row border border-gray-200 md:border-0 rounded-xl md:rounded-none mb-4 md:mb-0 bg-white">
+                  <td className="px-4 md:px-6 py-2 md:py-4 text-sm text-gray-500 font-medium flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
+                    <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Hora</span>
+                    <span>{formatFecha(venta.fechaHora)}</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 md:px-6 py-2 md:py-4 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
+                    <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Tipo</span>
                     <div className="flex items-center gap-2">
                         {venta.deuda ? (
                             <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100 whitespace-nowrap shadow-sm">
@@ -230,19 +232,22 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
                         </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right font-bold text-indigo-600 whitespace-nowrap">
-                    Bs {venta.totalBs.toFixed(2)}
+                  <td className="px-4 md:px-6 py-2 md:py-4 text-right font-bold text-indigo-600 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
+                    <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Total Bs</span>
+                    <span>Bs {venta.totalBs.toFixed(2)}</span>
                   </td>
-                  <td className="px-6 py-4 text-right font-black text-emerald-600 whitespace-nowrap">
-                    $ {venta.total.toFixed(2)}
+                  <td className="px-4 md:px-6 py-2 md:py-4 text-right font-black text-emerald-600 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
+                    <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Total $</span>
+                    <span>$ {venta.total.toFixed(2)}</span>
                   </td>
-                  <td className="px-6 py-4 text-center">
+                  <td className="px-4 md:px-6 py-3 md:py-4 text-center md:table-cell">
                     <button
                       onClick={() => abrirRecibo(venta)}
-                      className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all active:scale-95"
+                      className="w-full md:w-auto p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all active:scale-95 flex justify-center items-center gap-2 border border-gray-200 md:border-0"
                       title="Ver Nota de Entrega"
                     >
                       <Eye size={18} />
+                      <span className="md:hidden text-sm font-semibold">Ver Recibo</span>
                     </button>
                   </td>
                 </tr>

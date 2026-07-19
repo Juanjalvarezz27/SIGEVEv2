@@ -246,7 +246,7 @@ export default function VentasPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto min-h-screen">
+    <div className="w-full max-w-7xl mx-auto min-h-screen pb-24 md:pb-6">
       <HeaderVentas total={calcularTotal()} productosCount={productosSeleccionados.length} tasaBCV={tasa} loadingTasa={loadingTasa} />
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">

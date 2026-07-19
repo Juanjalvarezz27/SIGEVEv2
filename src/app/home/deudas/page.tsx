@@ -107,9 +107,9 @@ export default function DeudasPage() {
     : { color: "text-orange-600", bg: "bg-orange-50", icon: <Truck size={24}/> };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto min-h-screen space-y-6 pb-20">
+    <div className="w-full max-w-6xl mx-auto min-h-screen space-y-6 pb-20">
       
-      {/* HEADER */}
+      {/* HEADER Y FILTROS */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">

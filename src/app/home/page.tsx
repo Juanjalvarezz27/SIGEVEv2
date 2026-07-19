@@ -79,8 +79,8 @@ export default function HomePage() {
   const esActivo = data.comercio?.activo || false;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+    <div className="w-full max-w-7xl mx-auto space-y-4 md:space-y-6">
+      <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 md:gap-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
             ¡Hola, {data.nombre}! <span className="text-2xl animate-pulse">👋</span>

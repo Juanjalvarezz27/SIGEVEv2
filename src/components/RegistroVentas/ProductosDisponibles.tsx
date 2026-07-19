@@ -61,7 +61,7 @@ export default function ProductosDisponibles({
   };
 
   return (
-    <div className="flex-1 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[calc(100vh-120px)] overflow-hidden">
+    <div className="flex-1 bg-white md:rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[50vh] md:h-[calc(100vh-120px)] overflow-hidden">
 
       {/* --- HEADER --- */}
       <div className="p-5 border-b border-gray-200 bg-gray-50 rounded-t-2xl">

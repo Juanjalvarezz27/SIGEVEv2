@@ -197,7 +197,7 @@ export default function CarritoVenta({
 
   return (
     <>
-    <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 flex flex-col h-full relative">
+    <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 pb-[250px] md:pb-6 flex flex-col h-full relative">
      
       {/* HEADER */}
       <div className="flex items-center justify-between mb-6">
@@ -220,27 +220,27 @@ export default function CarritoVenta({
         ) : (
           productosSeleccionados.map((p) => (
             <div key={p.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100 relative group">
-              <button onClick={() => eliminarProducto(p.id)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500 p-1"><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => eliminarProducto(p.id)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500 p-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity"><Trash2 className="w-4 h-4" /></button>
               <div className="pr-6">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="font-semibold text-gray-800 text-sm">{p.nombre}</h3>
                   {p.porPeso && <span className="bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center gap-1"><Weight size={10}/> Kg</span>}
                 </div>
-                <div className="flex justify-between items-end">
+                <div className="flex justify-between items-end mt-2">
                   {p.porPeso ? (
                     <div className="flex items-center gap-2">
-                      <input type="text" inputMode="decimal" value={getDisplayValue(p.id)} onChange={(e) => handlePesoChange(p.id, e.target.value)} onBlur={(e) => handlePesoBlur(p.id, e.target.value)} onFocus={() => setIsEditing(prev => ({ ...prev, [p.id]: true }))} className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-center font-mono" placeholder="0.000" />
+                      <input type="text" inputMode="decimal" value={getDisplayValue(p.id)} onChange={(e) => handlePesoChange(p.id, e.target.value)} onBlur={(e) => handlePesoBlur(p.id, e.target.value)} onFocus={() => setIsEditing(prev => ({ ...prev, [p.id]: true }))} className="w-20 px-2 py-2 md:py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-center font-mono" placeholder="0.000" />
                       <span className="text-xs text-gray-500">kg</span>
                     </div>
                   ) : (
-                    <div className="flex items-center bg-white border border-gray-200 rounded-lg">
-                      <button onClick={() => decrementarCantidad(p.id)} disabled={p.cantidad<=1} className="px-2 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-50"><Minus size={14}/></button>
-                      <span className="px-2 text-sm font-bold w-8 text-center">{p.cantidad}</span>
-                      <button onClick={() => incrementarCantidad(p.id)} className="px-2 py-1 text-gray-600 hover:bg-gray-100"><Plus size={14}/></button>
+                    <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm">
+                      <button onClick={() => decrementarCantidad(p.id)} disabled={p.cantidad<=1} className="px-3 md:px-2 py-2 md:py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-50"><Minus size={16}/></button>
+                      <span className="px-2 text-sm font-bold w-10 md:w-8 text-center">{p.cantidad}</span>
+                      <button onClick={() => incrementarCantidad(p.id)} className="px-3 md:px-2 py-2 md:py-1 text-gray-600 hover:bg-gray-100"><Plus size={16}/></button>
                     </div>
                   )}
                   <div className="text-right">
-                    <div className="font-bold text-gray-800">${p.subtotal.toFixed(2)}</div>
+                    <div className="font-bold text-gray-800 text-base md:text-sm">${p.subtotal.toFixed(2)}</div>
                     <div className="text-[10px] text-gray-500">${p.precio.toFixed(2)} unit</div>
                   </div>
                 </div>
@@ -250,42 +250,45 @@ export default function CarritoVenta({
         )}
       </div>
 
-      {/* TOTALES */}
-      <div className="bg-gray-50 rounded-lg p-4 mb-6">
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-gray-600 font-medium">Total USD</span>
-          <span className="text-xl font-bold text-blue-600">${total.toFixed(2)}</span>
-        </div>
-        {tasaBCV && (
-          <div className="flex justify-between items-center text-sm border-t border-gray-200 pt-2 mt-2">
-            <span className="text-gray-500">Total Bs (Tasa: {tasaBCV.toFixed(2)})</span>
-            <span className="font-bold text-gray-700">Bs {(total * tasaBCV).toFixed(2)}</span>
+      {/* CONTENEDOR STICKY BOTTOM PARA MÓVIL */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 p-4 shadow-[0_-10px_20px_rgba(0,0,0,0.1)] md:relative md:bottom-auto md:left-auto md:right-auto md:z-auto md:bg-transparent md:border-0 md:p-0 md:shadow-none md:mt-auto">
+        {/* TOTALES */}
+        <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-3 md:mb-6">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-gray-600 font-medium">Total USD</span>
+            <span className="text-2xl font-black text-blue-600">${total.toFixed(2)}</span>
           </div>
-        )}
-      </div>
-
-      {/* PAGOS */}
-      <div className="mb-6">
-        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Método de Pago</label>
-        <div className="grid grid-cols-2 gap-2">
-          {metodosPago.map(m => (
-            <button key={m.id} onClick={() => setMetodoPagoId(m.id)} className={`p-3 rounded-lg border text-sm font-medium flex flex-col items-center gap-2 transition-all ${metodoPagoId === m.id ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'border-gray-200 hover:border-blue-300 text-gray-600'}`}>
-              {getMetodoPagoIcon(m.nombre)} {m.nombre}
-            </button>
-          ))}
+          {tasaBCV && (
+            <div className="flex justify-between items-center text-sm border-t border-gray-200 pt-1 mt-1">
+              <span className="text-gray-500">Total Bs (Tasa: {tasaBCV.toFixed(2)})</span>
+              <span className="font-bold text-gray-700">Bs {(total * tasaBCV).toFixed(2)}</span>
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* BOTONES */}
-      <div className="grid grid-cols-2 gap-3 mt-auto">
-        <button onClick={() => setModalFiadoOpen(true)} disabled={cargando || productosSeleccionados.length === 0} className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl font-bold text-gray-700 bg-white border-2 border-orange-100 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 transition-all disabled:opacity-50 active:scale-95">
-          <UserMinus size={20}/>
-          <span className="text-xs">Fiar / Crédito</span>
-        </button>
-        <button onClick={registrarVenta} disabled={cargando || productosSeleccionados.length === 0 || !metodoPagoId} className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95">
-          {cargando ? <Loader2 className="animate-spin w-5 h-5" /> : <CreditCard size={20}/>}
-          <span className="text-xs">Cobrar Ahora</span>
-        </button>
+        {/* PAGOS */}
+        <div className="mb-4 md:mb-6">
+          <label className="hidden md:block text-xs font-bold text-gray-500 uppercase mb-2">Método de Pago</label>
+          <div className="grid grid-cols-4 md:grid-cols-2 gap-2">
+            {metodosPago.map(m => (
+              <button key={m.id} onClick={() => setMetodoPagoId(m.id)} className={`p-2 md:p-3 rounded-lg border text-xs md:text-sm font-medium flex flex-col items-center gap-1 transition-all ${metodoPagoId === m.id ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-500' : 'border-gray-200 hover:border-blue-300 text-gray-600'}`}>
+                {getMetodoPagoIcon(m.nombre)} <span className="truncate w-full text-center">{m.nombre.split(' ')[0]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* BOTONES */}
+        <div className="grid grid-cols-2 gap-3">
+          <button onClick={() => setModalFiadoOpen(true)} disabled={cargando || productosSeleccionados.length === 0} className="flex flex-col items-center justify-center gap-1 h-14 md:h-auto md:py-3 px-2 rounded-xl font-bold text-gray-700 bg-white border-2 border-orange-100 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 transition-all disabled:opacity-50 active:scale-95">
+            <UserMinus size={20}/>
+            <span className="text-xs">Fiar / Crédito</span>
+          </button>
+          <button onClick={registrarVenta} disabled={cargando || productosSeleccionados.length === 0 || !metodoPagoId} className="flex flex-col items-center justify-center gap-1 h-14 md:h-auto md:py-3 px-2 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95">
+            {cargando ? <Loader2 className="animate-spin w-5 h-5" /> : <CreditCard size={20}/>}
+            <span className="text-xs">Cobrar Ahora</span>
+          </button>
+        </div>
       </div>
     </div>
 

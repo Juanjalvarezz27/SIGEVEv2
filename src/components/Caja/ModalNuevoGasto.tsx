@@ -34,8 +34,8 @@ export default function ModalNuevoGasto({ isOpen, onClose, onSuccess }: any) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 animate-in zoom-in-95">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 p-0 md:p-4 animate-in fade-in">
+      <div className="bg-white rounded-t-3xl md:rounded-2xl w-full max-w-md shadow-2xl p-6 animate-in slide-in-from-bottom-full md:slide-in-from-bottom-0 md:zoom-in-95 duration-300">
         <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <div className="bg-red-100 p-2 rounded-lg text-red-600"><TrendingDown size={20}/></div>

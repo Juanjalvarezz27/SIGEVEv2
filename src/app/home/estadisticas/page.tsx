@@ -58,9 +58,9 @@ export default function EstadisticasPage() {
   useEffect(() => { cargarEstadisticas(); }, [cargarEstadisticas]);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto min-h-screen space-y-8 pb-20">
+    <div className="w-full max-w-7xl mx-auto min-h-screen space-y-8 pb-20">
       
-      {/* Header */}
+      {/* CABECERA Y FILTROS */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">

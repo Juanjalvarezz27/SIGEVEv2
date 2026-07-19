@@ -163,7 +163,7 @@ const ProductosList = () => {
         
         {/* HEADER RESPONSIVE CENTRADO */}
         {/* Usamos 'items-center' en flex-col para centrar todo en móvil */}
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 px-4 sm:px-6 py-6 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 px-4 sm:px-6 py-4 md:py-6 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6">
           
           {/* Título: Centrado en móvil */}
           <div className="flex flex-col sm:flex-row items-center text-center sm:text-left">
@@ -210,9 +210,9 @@ const ProductosList = () => {
         </div>
 
         {/* CONTENEDOR TABLA */}
-        <div className="overflow-x-auto min-h-[300px] w-full">
-          <table className="w-full min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+        <div className="overflow-x-auto min-h-[300px] w-full p-4 md:p-0">
+          <table className="w-full min-w-full md:divide-y md:divide-gray-200 block md:table">
+            <thead className="bg-gray-50 text-xs text-gray-500 uppercase hidden md:table-header-group">
               <tr>
                 <th className="px-4 sm:px-6 py-3 text-left whitespace-nowrap">Producto</th>
                 <th className="px-4 sm:px-6 py-3 text-left whitespace-nowrap">Stock</th>
@@ -221,29 +221,39 @@ const ProductosList = () => {
                 <th className="px-4 sm:px-6 py-3 text-right whitespace-nowrap">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y-0 md:divide-y divide-gray-200 block md:table-row-group">
               {loadingProductos ? (
-                <tr><td colSpan={5} className="text-center py-10"><Loader2 className="animate-spin h-8 w-8 text-indigo-500 mx-auto"/></td></tr>
+                <tr><td colSpan={5} className="text-center py-10 block md:table-cell"><Loader2 className="animate-spin h-8 w-8 text-indigo-500 mx-auto"/></td></tr>
               ) : currentProducts.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-10 text-gray-500">No hay productos.</td></tr>
+                <tr><td colSpan={5} className="text-center py-10 text-gray-500 block md:table-cell">No hay productos.</td></tr>
               ) : (
                 currentProducts.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50">
-                    <td className="px-4 sm:px-6 py-4 min-w-[150px]">
-                      <div className="font-medium text-gray-900 break-words">{p.nombre}</div>
-                      {p.porPeso && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 rounded-full whitespace-nowrap">Por Peso</span>}
+                  <tr key={p.id} className="hover:bg-gray-50 block md:table-row border border-gray-200 md:border-0 rounded-xl md:rounded-none mb-4 md:mb-0 p-4 md:p-0 bg-white">
+                    <td className="px-0 md:px-6 py-2 md:py-4 flex flex-col md:table-cell border-b md:border-0 border-gray-100 pb-3 md:pb-4 min-w-[150px]">
+                      <span className="md:hidden font-bold text-gray-400 text-xs uppercase mb-1">Producto</span>
+                      <div>
+                        <span className="font-medium text-gray-900 break-words">{p.nombre}</span>
+                        {p.porPeso && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 rounded-full whitespace-nowrap ml-2">Por Peso</span>}
+                      </div>
                     </td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                    <td className="px-0 md:px-6 py-2 md:py-4 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100 whitespace-nowrap">
+                        <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Stock</span>
                         <div className={`flex items-center gap-1 font-bold ${p.stock <= 5 ? 'text-red-600' : 'text-gray-700'}`}>
                             <Boxes size={14}/>
                             {p.stock} {p.porPeso ? 'Kg' : 'Und'}
                         </div>
                     </td>
-                    <td className="px-4 sm:px-6 py-4 font-bold text-gray-700 whitespace-nowrap">${p.precio.toFixed(2)}</td>
-                    <td className="px-4 sm:px-6 py-4 text-green-700 font-bold whitespace-nowrap">Bs {formatBs(p.precio)}</td>
-                    <td className="px-4 sm:px-6 py-4 text-right whitespace-nowrap space-x-2">
-                      <button onClick={() => setProductoAEditar(p)} className="text-blue-600 hover:bg-blue-50 p-2 rounded"><Edit2 size={16}/></button>
-                      <button onClick={() => setProductoAEliminar(p)} className="text-red-600 hover:bg-red-50 p-2 rounded"><Trash2 size={16}/></button>
+                    <td className="px-0 md:px-6 py-2 md:py-4 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100 font-bold text-gray-700 whitespace-nowrap">
+                        <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Precio USD</span>
+                        <span>${p.precio.toFixed(2)}</span>
+                    </td>
+                    <td className="px-0 md:px-6 py-2 md:py-4 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100 text-green-700 font-bold whitespace-nowrap">
+                        <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Precio Bs</span>
+                        <span>Bs {formatBs(p.precio)}</span>
+                    </td>
+                    <td className="px-0 md:px-6 py-3 md:py-4 flex justify-end gap-2 md:table-cell whitespace-nowrap pt-3 md:pt-4">
+                      <button onClick={() => setProductoAEditar(p)} className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg border border-transparent md:border-0 hover:border-blue-200 transition-colors bg-blue-50 md:bg-transparent"><Edit2 size={18}/></button>
+                      <button onClick={() => setProductoAEliminar(p)} className="text-red-600 hover:bg-red-50 p-2 rounded-lg border border-transparent md:border-0 hover:border-red-200 transition-colors bg-red-50 md:bg-transparent"><Trash2 size={18}/></button>
                     </td>
                   </tr>
                 ))
@@ -254,7 +264,7 @@ const ProductosList = () => {
 
         {/* PAGINACIÓN: Centrada en móvil */}
         {totalPages > 1 && (
-          <div className="px-4 sm:px-6 py-6 border-t flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
+          <div className="px-4 sm:px-6 py-4 md:py-6 border-t flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={!hasPrevPage}

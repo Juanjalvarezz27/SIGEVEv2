@@ -22,7 +22,7 @@ export default async function HomeLayout({
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar user={session.user as any} />
-        <main className="max-w-[1600px] mx-auto p-4 md:p-6">
+        <main className="max-w-[1600px] mx-auto px-2 py-4 md:p-6">
             {children}
         </main>
       </div>
@@ -54,7 +54,7 @@ export default async function HomeLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar user={session.user as any} />
-      <main className="max-w-[1600px] mx-auto p-4 md:p-6">
+      <main className="max-w-[1600px] mx-auto px-2 py-4 md:p-6">
         {children}
       </main>
     </div>

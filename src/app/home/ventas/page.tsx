@@ -55,7 +55,7 @@ export default function HistorialPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto min-h-screen space-y-8 pb-20">
+    <div className="w-full max-w-7xl mx-auto min-h-screen space-y-8 pb-20">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="flex items-center">
           <div className="p-3 bg-indigo-600 rounded-xl mr-4 shadow-lg shadow-indigo-200">

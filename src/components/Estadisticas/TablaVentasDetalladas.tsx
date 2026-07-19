@@ -140,9 +140,10 @@ export default function TablaVentasDetalladas({ ventas, periodo }: Props) {
           ) : (
             <>
               {/* TABLA */}
+              {/* TABLA */}
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase font-semibold tracking-wider">
+                <table className="w-full block md:table">
+                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase font-semibold tracking-wider hidden md:table-header-group">
                     <tr>
                       <th className="px-6 py-4 text-left">Fecha</th>
                       <th className="px-6 py-4 text-left">Total</th>
@@ -151,7 +152,7 @@ export default function TablaVentasDetalladas({ ventas, periodo }: Props) {
                       <th className="px-6 py-4 text-right"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y-0 md:divide-y divide-gray-100 block md:table-row-group">
                     {ventasPaginadas.map((venta) => {
                       const isExpanded = ventaExpandida === venta.id;
 
@@ -160,22 +161,27 @@ export default function TablaVentasDetalladas({ ventas, periodo }: Props) {
                           {/* FILA PRINCIPAL */}
                           <tr
                             onClick={(e) => toggleExpandirFila(venta.id, e)}
-                            className={`cursor-pointer transition-colors ${isExpanded ? 'bg-indigo-50' : 'hover:bg-gray-50'}`}
+                            className={`cursor-pointer transition-colors block md:table-row border border-gray-200 md:border-0 rounded-xl md:rounded-none mb-4 md:mb-0 p-4 md:p-0 bg-white md:bg-transparent ${isExpanded ? 'md:bg-indigo-50 border-indigo-200' : 'hover:bg-gray-50'}`}
                           >
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex flex-col">
+                            <td className="px-0 md:px-6 py-2 md:py-4 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
+                              <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Fecha</span>
+                              <div className="flex flex-col text-right md:text-left">
                                 <span className="text-sm font-bold text-gray-800">{formatearFecha(venta.fechaHora)}</span>
-                                <div className="flex items-center gap-1 text-xs text-gray-500">
+                                <div className="flex items-center justify-end md:justify-start gap-1 text-xs text-gray-500">
                                   <Clock size={10}/> {formatearHora(venta.fechaHora)}
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="font-bold text-gray-900">${venta.total.toFixed(2)}</div>
-                              <div className="text-[11px] font-medium text-gray-400">Bs {venta.totalBs.toFixed(2)}</div>
+                            <td className="px-0 md:px-6 py-2 md:py-4 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
+                              <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Total</span>
+                              <div className="text-right md:text-left">
+                                <div className="font-bold text-gray-900">${venta.total.toFixed(2)}</div>
+                                <div className="text-[11px] font-medium text-gray-400">Bs {venta.totalBs.toFixed(2)}</div>
+                              </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex flex-col gap-1 items-start">
+                            <td className="px-0 md:px-6 py-2 md:py-4 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
+                                <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Tipo</span>
+                                <div className="flex flex-row md:flex-col gap-2 md:gap-1 items-center md:items-start justify-end md:justify-start">
                                     {venta.deuda ? (
                                         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
                                             DEUDA
@@ -188,11 +194,13 @@ export default function TablaVentasDetalladas({ ventas, periodo }: Props) {
                                     <span className="text-xs text-gray-600 font-medium ml-0.5">{venta.metodoPago.nombre}</span>
                                 </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {venta.deuda ? '1 (Abono)' : venta.productos.length}
+                            <td className="px-0 md:px-6 py-2 md:py-4 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100 text-sm text-gray-500">
+                              <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Items</span>
+                              <span>{venta.deuda ? '1 (Abono)' : venta.productos.length}</span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right">
-                              <div className={`p-1.5 rounded-full inline-block ${isExpanded ? 'bg-indigo-200 text-indigo-700' : 'text-gray-400'}`}>
+                            <td className="px-0 md:px-6 py-3 md:py-4 flex justify-center md:justify-end md:table-cell text-center md:text-right pt-4 md:pt-4">
+                              <div className={`p-1.5 rounded-full inline-block flex items-center justify-center w-full md:w-auto ${isExpanded ? 'bg-indigo-200 text-indigo-700' : 'text-gray-400 bg-gray-100 md:bg-transparent'}`}>
+                                <span className="md:hidden text-sm font-semibold mr-2">{isExpanded ? 'Ocultar Detalle' : 'Ver Detalle'}</span>
                                 {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                               </div>
                             </td>
@@ -200,34 +208,34 @@ export default function TablaVentasDetalladas({ ventas, periodo }: Props) {
 
                           {/* DETALLE EXPANDIDO */}
                           {isExpanded && (
-                            <tr className="bg-indigo-50/50">
-                              <td colSpan={5} className="px-6 py-4 border-b border-indigo-100">
+                            <tr className="bg-indigo-50/50 block md:table-row -mt-4 mb-4 md:m-0 rounded-b-xl border-x border-b border-indigo-200 md:border-0">
+                              <td colSpan={5} className="px-3 py-3 md:px-6 md:py-4 border-b border-indigo-100 block md:table-cell">
                                 <div className="max-w-lg mx-auto bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">
                                   <div className={`h-1.5 w-full ${venta.deuda ? 'bg-gradient-to-r from-amber-400 to-orange-500' : 'bg-gradient-to-r from-emerald-400 to-teal-500'}`}></div>
-                                  <div className="p-6">
+                                  <div className="p-4 md:p-6">
                                     <div className="flex justify-between items-start mb-4 border-b border-gray-100 pb-4">
                                       <div>
-                                        <h4 className="font-bold text-gray-800 text-sm uppercase tracking-wider flex items-center gap-2">
+                                        <h4 className="font-bold text-gray-800 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2">
                                           <Receipt size={16} className={venta.deuda ? 'text-amber-500' : 'text-emerald-500'}/> 
                                           {venta.deuda ? 'Comprobante de Abono' : 'Detalle de Venta'}
                                         </h4>
-                                        <span className="text-[10px] font-mono text-gray-400 mt-1 block">ID: {venta.id}</span>
+                                        <span className="text-[10px] font-mono text-gray-400 mt-1 block truncate w-32 md:w-auto">ID: {venta.id}</span>
                                       </div>
                                       <div className="text-right">
-                                        <div className="text-xs font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                                        <div className="text-[10px] md:text-xs font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded border border-gray-100">
                                           Tasa: {venta.tasaBCV.toFixed(2)}
                                         </div>
                                       </div>
                                     </div>
 
                                     {/* CONTENIDO DEL DETALLE */}
-                                    <div className="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-100">
+                                    <div className="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-100 max-h-60 overflow-y-auto">
                                         {venta.deuda ? (
                                             <div>
                                                 <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200/50">
                                                     <User size={14} className="text-gray-400"/>
-                                                    <span className="text-xs font-bold text-gray-500 uppercase">Cliente:</span>
-                                                    <span className="text-sm font-bold text-gray-800">{venta.deuda.persona}</span>
+                                                    <span className="text-[10px] md:text-xs font-bold text-gray-500 uppercase">Cliente:</span>
+                                                    <span className="text-xs md:text-sm font-bold text-gray-800 truncate">{venta.deuda.persona}</span>
                                                 </div>
                                                 <div className="space-y-1">
                                                     {renderDetalleDeuda(venta.deuda.descripcion)}
@@ -236,15 +244,15 @@ export default function TablaVentasDetalladas({ ventas, periodo }: Props) {
                                         ) : (
                                             <div className="space-y-2">
                                                 {venta.productos.map((prod: any) => (
-                                                    <div key={prod.id} className="flex justify-between items-center text-sm border-b border-gray-200/50 last:border-0 pb-2 last:pb-0">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="bg-white text-gray-600 font-bold min-w-[32px] h-[32px] flex items-center justify-center rounded-lg text-xs border border-gray-200 shadow-sm">
+                                                    <div key={prod.id} className="flex justify-between items-center text-xs md:text-sm border-b border-gray-200/50 last:border-0 pb-2 last:pb-0">
+                                                        <div className="flex items-center gap-2 md:gap-3">
+                                                            <div className="bg-white text-gray-600 font-bold min-w-[24px] h-[24px] md:min-w-[32px] md:h-[32px] flex items-center justify-center rounded-lg text-[10px] md:text-xs border border-gray-200 shadow-sm">
                                                                 {prod.producto.porPeso ? 'Kg' : `x${prod.cantidad}`}
                                                             </div>
                                                             <div>
-                                                                <p className="font-medium text-gray-800 truncate max-w-[180px]">{prod.producto.nombre}</p>
+                                                                <p className="font-medium text-gray-800 truncate w-[120px] md:w-[180px]">{prod.producto.nombre}</p>
                                                                 {prod.producto.porPeso && (
-                                                                    <p className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
+                                                                    <p className="text-[9px] md:text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
                                                                         <Weight size={10}/> {prod.peso} kg
                                                                     </p>
                                                                 )}
@@ -263,13 +271,13 @@ export default function TablaVentasDetalladas({ ventas, periodo }: Props) {
 
                                     <div className="relative pt-2">
                                       <div className="flex justify-between items-end">
-                                        <div className="text-sm text-gray-500">
+                                        <div className="text-xs md:text-sm text-gray-500">
                                           Total Bs
-                                          <p className="text-lg font-bold text-gray-600 mt-0.5">Bs {venta.totalBs.toFixed(2)}</p>
+                                          <p className="text-base md:text-lg font-bold text-gray-600 mt-0.5">Bs {venta.totalBs.toFixed(2)}</p>
                                         </div>
                                         <div className="text-right">
-                                          <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Pagado</div>
-                                          <p className={`text-3xl font-black leading-none tracking-tight ${venta.deuda ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                          <div className="text-[9px] md:text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Pagado</div>
+                                          <p className={`text-2xl md:text-3xl font-black leading-none tracking-tight ${venta.deuda ? 'text-amber-600' : 'text-emerald-600'}`}>
                                             ${venta.total.toFixed(2)}
                                           </p>
                                         </div>
