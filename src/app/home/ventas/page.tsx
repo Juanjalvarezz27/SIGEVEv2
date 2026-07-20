@@ -86,35 +86,26 @@ export default function HistorialPage() {
   return (
     <div className="w-full max-w-full mx-auto min-h-screen space-y-8 pb-20">
       {/* HEADER PREMIUM */}
-      <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-center bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-         <div className="flex items-center gap-5">
-            <div className="p-4 rounded-2xl text-white shadow-inner flex flex-shrink-0 items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-200">
-               <Calendar size={32} strokeWidth={2}/>
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 justify-between items-start lg:items-center bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl border border-gray-100 shadow-sm">
+         <div className="flex items-center gap-3 md:gap-5">
+            <div className="p-3 md:p-4 rounded-xl md:rounded-2xl text-white shadow-inner flex flex-shrink-0 items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-200">
+               <Calendar className="w-6 h-6 md:w-8 md:h-8" strokeWidth={2}/>
             </div>
             <div>
-               <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight uppercase">Resumen Diario</h1>
-               <p className="text-xs sm:text-sm text-gray-500 font-medium capitalize mt-1">{formatearFechaHoy()}</p>
+               <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 tracking-tight uppercase">Resumen Diario</h1>
+               <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 font-medium capitalize mt-0.5 md:mt-1">{formatearFechaHoy()}</p>
             </div>
          </div>
-         <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
-           <div className="px-5 py-2.5 bg-blue-50 rounded-xl border border-blue-100/50">
-              <p className="text-[10px] uppercase font-bold text-blue-600 tracking-wider mb-0.5">Tasa BCV</p>
-              <div className="flex items-center gap-2">
-                 <TrendingUp size={16} className="text-blue-600"/>
-                 <span className="text-lg font-black text-gray-800 tracking-tight">
+         <div className="flex items-center gap-3 w-full lg:w-auto justify-center lg:justify-end mt-2 lg:mt-0">
+           <div className="px-6 py-2 md:px-5 md:py-2.5 bg-blue-50 rounded-xl border border-blue-100/50 flex flex-col items-center">
+              <p className="text-[10px] uppercase font-bold text-blue-600 tracking-wider mb-0.5 text-center">Tasa BCV</p>
+              <div className="flex items-center justify-center gap-1.5 md:gap-2">
+                 <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-blue-600"/>
+                 <span className="text-base md:text-lg font-black text-gray-800 tracking-tight text-center">
                     {loadingTasa ? '...' : `Bs ${tasa?.toFixed(2)}`}
                  </span>
               </div>
            </div>
-           <button onClick={handleRecargarTasa} className="p-3.5 bg-blue-50 hover:bg-blue-100 border border-blue-100 text-blue-600 rounded-xl transition-colors shadow-sm">
-              <RefreshCw className={`${rotando ? 'animate-spin' : ''}`} size={20}/>
-           </button>
-           <button 
-             onClick={() => { cargarResumen(); if(seccionAbierta) cargarVentas(pagination.page); actualizarTasa(); }} 
-             className="p-3.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all border border-indigo-100/50 shadow-sm"
-           >
-             <RefreshCw size={20} className={cargando || cargandoVentas ? "animate-spin" : ""} />
-           </button>
         </div>
       </div>
 
@@ -175,20 +166,20 @@ export default function HistorialPage() {
               
               {/* PAGINACIÓN */}
               {pagination.totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl border border-gray-100 shadow-sm gap-4">
+                <div className="flex flex-row justify-between items-center bg-white p-3 sm:p-4 rounded-xl border border-gray-100 shadow-sm gap-2">
                   <button
                     onClick={() => handleCambiarPagina(pagination.page - 1)}
                     disabled={pagination.page === 1 || cargandoVentas}
-                    className="w-full sm:w-auto flex items-center justify-center px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-gray-200 hover:border-indigo-200"
+                    className="flex-shrink-0 flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-gray-200 hover:border-indigo-200"
                   >
-                    <ChevronLeft size={18} className="mr-1.5" /> Anterior
+                    <ChevronLeft size={18} className="sm:mr-1.5" /> <span className="hidden sm:inline">Anterior</span>
                   </button>
 
-                  <div className="flex flex-col items-center">
-                    <span className="text-sm font-medium text-gray-600">
+                  <div className="flex flex-col items-center text-center">
+                    <span className="text-xs sm:text-sm font-medium text-gray-600">
                       Página <span className="text-indigo-600 font-bold">{pagination.page}</span> de {pagination.totalPages}
                     </span>
-                    <span className="text-xs text-gray-400 mt-0.5">
+                    <span className="hidden sm:block text-[10px] sm:text-xs text-gray-400 mt-0.5">
                       Mostrando {ventas.length} registros
                     </span>
                   </div>
@@ -196,9 +187,9 @@ export default function HistorialPage() {
                   <button
                     onClick={() => handleCambiarPagina(pagination.page + 1)}
                     disabled={pagination.page === pagination.totalPages || cargandoVentas}
-                    className="w-full sm:w-auto flex items-center justify-center px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-gray-200 hover:border-indigo-200"
+                    className="flex-shrink-0 flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-gray-200 hover:border-indigo-200"
                   >
-                    Siguiente <ChevronRight size={18} className="ml-1.5" />
+                    <span className="hidden sm:inline">Siguiente</span> <ChevronRight size={18} className="sm:ml-1.5" />
                   </button>
                 </div>
               )}

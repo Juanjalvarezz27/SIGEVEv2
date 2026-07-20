@@ -1,6 +1,6 @@
 "use client";
 
-import { Package, Search, X, ChevronLeft, ChevronRight, Weight, Boxes, Plus, PackageOpen } from 'lucide-react';
+import { Package, Search, X, ChevronLeft, ChevronRight, Weight, Boxes, Plus, Minus, PackageOpen } from 'lucide-react';
 import { useRef } from 'react';
 
 interface Producto {
@@ -37,6 +37,8 @@ interface ProductosDisponiblesProps {
   pagination: PaginationData;
   cambiarPagina: (page: number) => void;
   cargandoProductos: boolean;
+  decrementarCantidad: (id: string) => void;
+  eliminarProducto: (id: string) => void;
 }
 
 export default function ProductosDisponibles({
@@ -48,7 +50,9 @@ export default function ProductosDisponibles({
   agregarProducto,
   pagination,
   cambiarPagina,
-  cargandoProductos
+  cargandoProductos,
+  decrementarCantidad,
+  eliminarProducto
 }: ProductosDisponiblesProps) {
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -61,7 +65,7 @@ export default function ProductosDisponibles({
   };
 
   return (
-    <div className="flex-1 bg-white md:rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[50vh] md:h-full md:min-h-[calc(100vh-120px)] overflow-hidden">
+    <div className="flex-1 bg-white md:rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[calc(100vh-160px)] md:h-[calc(100vh-120px)] overflow-hidden">
 
       {/* --- HEADER --- */}
       <div className="p-5 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
@@ -113,28 +117,50 @@ export default function ProductosDisponibles({
               const enCarrito = productosSeleccionados.find(sel => sel.id === prod.id);
 
               return (
-                <button
+                <div
                   data-testid="add-to-cart-btn"
                   key={prod.id}
                   onClick={() => agregarProducto(prod)}
+                  role="button"
+                  tabIndex={0}
                   className={`
-                    relative flex flex-col text-left p-5 rounded-2xl border transition-all duration-200 group overflow-hidden h-full min-h-[160px]
+                    cursor-pointer relative flex flex-col text-left p-3 md:p-5 rounded-2xl border transition-all duration-200 group overflow-hidden h-full min-h-[120px] md:min-h-[160px]
                     ${enCarrito
                       ? 'bg-indigo-50 border-indigo-300 ring-2 ring-indigo-100 shadow-md transform scale-[1.02]'
                       : 'bg-white border-gray-200 hover:border-indigo-400 hover:shadow-xl hover:-translate-y-1'
                     }
                   `}
                 >
-                  {/* Botón flotante (+) MÁS GRANDE */}
-                  <div className={`absolute top-3 right-3 transition-all duration-300 ${enCarrito ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0'}`}>
-                     <div className={`p-2 rounded-xl shadow-sm ${enCarrito ? 'bg-indigo-100 text-indigo-700' : 'bg-indigo-600 text-white'}`}>
-                       <Plus size={20} strokeWidth={3}/>
-                     </div>
+                  {/* Controles de Cantidad Flotantes */}
+                  <div className={`absolute top-3 right-3 transition-all duration-300 z-10 ${enCarrito ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0'}`}>
+                    {enCarrito ? (
+                      <div className="flex items-center bg-white border border-indigo-200 rounded-xl shadow-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); if(enCarrito.cantidad > 1 && !prod.porPeso) { decrementarCantidad(prod.id); } else { eliminarProducto(prod.id); } }}
+                          className="p-1.5 md:p-2 text-indigo-600 hover:bg-indigo-50 transition-colors"
+                        >
+                          <Minus size={16} strokeWidth={3}/>
+                        </button>
+                        <span className="w-5 md:w-6 text-center text-xs md:text-sm font-bold text-indigo-800">
+                          {prod.porPeso ? "1" : enCarrito.cantidad}
+                        </span>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); agregarProducto(prod); }}
+                          className="p-1.5 md:p-2 text-indigo-600 hover:bg-indigo-50 transition-colors"
+                        >
+                          <Plus size={16} strokeWidth={3}/>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-2 rounded-xl shadow-sm bg-indigo-600 text-white">
+                        <Plus size={20} strokeWidth={3}/>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex-1 w-full pr-8">
-                    {/* Nombre Producto MÁS GRANDE */}
-                    <h3 className={`font-bold text-base leading-tight line-clamp-2 mb-3 ${enCarrito ? 'text-indigo-900' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                    {/* Nombre Producto */}
+                    <h3 className={`font-bold text-sm md:text-base leading-tight line-clamp-2 mb-2 md:mb-3 ${enCarrito ? 'text-indigo-900' : 'text-gray-700 group-hover:text-gray-900'}`}>
                       {prod.nombre}
                     </h3>
 
@@ -154,10 +180,10 @@ export default function ProductosDisponibles({
                   </div>
 
                   {/* Footer Precio */}
-                  <div className="mt-5 pt-3 border-t border-gray-100 flex justify-between items-end w-full">
+                  <div className="mt-3 md:mt-5 pt-2 md:pt-3 border-t border-gray-100 flex justify-between items-end w-full">
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Precio</span>
-                    {/* PRECIO GIGANTE */}
-                    <span className={`text-2xl font-black tracking-tight ${enCarrito ? 'text-indigo-700' : 'text-gray-800'}`}>
+                    {/* PRECIO */}
+                    <span className={`text-xl md:text-2xl font-black tracking-tight ${enCarrito ? 'text-indigo-700' : 'text-gray-800'}`}>
                       ${prod.precio.toFixed(2)}
                     </span>
                   </div>
@@ -168,7 +194,7 @@ export default function ProductosDisponibles({
                        En carrito: {prod.porPeso ? `${enCarrito.peso} ${prod.unidad || 'kg'}` : `${enCarrito.cantidad} un`}
                     </div>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
@@ -178,25 +204,27 @@ export default function ProductosDisponibles({
       {/* --- FOOTER PAGINACIÓN --- */}
       {pagination && pagination.totalPages > 1 && (
         <div className="p-4 border-t border-gray-200 bg-white">
-          <div className="flex justify-between items-center bg-gray-50 rounded-xl p-1.5 border border-gray-100">
+          <div className="flex flex-row justify-between items-center bg-gray-50 rounded-xl p-3 sm:p-4 border border-gray-100 shadow-sm gap-2">
             <button
               disabled={!pagination.hasPrevPage}
               onClick={() => handleCambiarPagina(pagination.page - 1)}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-xs font-bold text-gray-600 disabled:opacity-50 hover:bg-gray-50 transition-all active:scale-95"
+              className="flex-shrink-0 flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-lg shadow-sm text-xs sm:text-sm font-medium text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-200 transition-all active:scale-95"
             >
-              <ChevronLeft size={16}/> Anterior
+              <ChevronLeft size={18} className="sm:mr-1.5"/> <span className="hidden sm:inline">Anterior</span>
             </button>
 
-            <span className="text-xs font-bold text-gray-500">
-              Página <span className="text-indigo-600 text-sm">{pagination.page}</span> de {pagination.totalPages}
-            </span>
+            <div className="flex flex-col items-center text-center">
+              <span className="text-xs sm:text-sm font-bold text-gray-500">
+                Página <span className="text-indigo-600 text-sm">{pagination.page}</span> de {pagination.totalPages}
+              </span>
+            </div>
 
             <button
               disabled={!pagination.hasNextPage}
               onClick={() => handleCambiarPagina(pagination.page + 1)}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-xs font-bold text-gray-600 disabled:opacity-50 hover:bg-gray-50 transition-all active:scale-95"
+              className="flex-shrink-0 flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-lg shadow-sm text-xs sm:text-sm font-medium text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-200 transition-all active:scale-95"
             >
-              Siguiente <ChevronRight size={16}/>
+              <span className="hidden sm:inline">Siguiente</span> <ChevronRight size={18} className="sm:ml-1.5"/>
             </button>
           </div>
         </div>

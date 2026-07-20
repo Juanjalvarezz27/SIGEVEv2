@@ -44,6 +44,7 @@ interface CarritoVentaProps {
   tasaBCV: number | null;
   limpiarCarrito: () => void;
   loadingTasa?: boolean;
+  onCloseMobile?: () => void;
 }
 
 const getMetodoPagoIcon = (nombre: string) => {
@@ -70,7 +71,8 @@ export default function CarritoVenta({
   registrarVenta,
   cargando,
   tasaBCV,
-  limpiarCarrito
+  limpiarCarrito,
+  onCloseMobile
 }: CarritoVentaProps) {
  
   const total = calcularTotal();
@@ -153,9 +155,9 @@ export default function CarritoVenta({
   const handlePesoBlur = (id: string, value: string) => {
     setIsEditing(prev => ({ ...prev, [id]: false }));
     let num = parseFloat(value.replace(',', '.'));
-    if (isNaN(num) || num <= 0) num = 0.001;
-    if (num > 100) num = 100;
-    const final = parseFloat(num.toFixed(3));
+    if (isNaN(num) || num <= 0) num = 0.01;
+    if (num > 1000) num = 1000;
+    const final = parseFloat(num.toFixed(2));
     setPesoInputs(prev => ({ ...prev, [id]: final.toString() }));
     actualizarPeso(id, final);
   };
@@ -200,6 +202,7 @@ export default function CarritoVenta({
         setClienteTelefono("");
         setClienteNota("");
         limpiarCarrito();
+        if (onCloseMobile) onCloseMobile();
       } else {
         const error = await res.json();
         toast.error(error.error || "Error al fiar");
@@ -210,29 +213,45 @@ export default function CarritoVenta({
 
   return (
     <>
-    <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 pb-[250px] md:pb-6 flex flex-col h-full relative">
+    <div className="bg-gray-50 lg:bg-white lg:rounded-lg lg:shadow-lg lg:border lg:border-gray-200 p-4 md:p-6 flex flex-col min-h-screen lg:min-h-0 lg:h-full relative">
      
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-3">
-          <ShoppingCart className="w-6 h-6 text-blue-600" />
-          <h2 className="text-xl font-bold text-gray-800">Carrito</h2>
+      <div className="flex items-center mb-6 pt-2 md:pt-0">
+        {onCloseMobile && (
+          <button onClick={onCloseMobile} className="lg:hidden flex items-center justify-center mr-4 p-2 bg-white shadow-sm border border-gray-200 text-gray-700 hover:bg-gray-100 rounded-xl font-bold text-sm transition-colors active:scale-95">
+            <X size={18} className="mr-1" /> Volver
+          </button>
+        )}
+        <div className="flex items-center space-x-2 flex-1">
+          <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 text-blue-600 hidden md:block" />
+          <h2 className="text-xl md:text-xl font-bold text-gray-800">Tu Carrito</h2>
         </div>
-        <span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">
-          {productosSeleccionados.length} Items
-        </span>
+        <div className="flex items-center gap-2">
+          {productosSeleccionados.length > 0 && (
+            <button 
+              onClick={limpiarCarrito} 
+              className="flex items-center gap-1.5 px-3 py-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-full text-xs font-bold transition-colors active:scale-95 border border-red-100"
+              title="Vaciar carrito"
+            >
+              <Trash2 size={14} /> <span className="hidden sm:inline">Vaciar</span>
+            </button>
+          )}
+          <span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap">
+            {productosSeleccionados.length} Items
+          </span>
+        </div>
       </div>
 
       {/* ITEMS */}
-      <div className="space-y-3 mb-6 overflow-y-auto pr-1 flex-1 custom-scrollbar">
+      <div className="space-y-2 mb-4 pr-1 lg:overflow-y-auto lg:flex-1 custom-scrollbar">
         {productosSeleccionados.length === 0 ? (
-          <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200 h-full flex flex-col justify-center items-center">
+          <div className="text-center py-10 bg-white lg:bg-gray-50 rounded-lg border border-dashed border-gray-200 h-full flex flex-col justify-center items-center">
             <ShoppingCart className="w-10 h-10 text-gray-300 mb-2" />
             <p className="text-gray-500 text-sm">Tu carrito está vacío</p>
           </div>
         ) : (
           productosSeleccionados.map((p) => (
-            <div key={p.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100 relative group">
+            <div key={p.id} className="p-2.5 bg-white lg:bg-gray-50 rounded-lg border border-gray-200 lg:border-gray-100 relative group shadow-sm lg:shadow-none">
               <button onClick={() => eliminarProducto(p.id)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500 p-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity"><Trash2 className="w-4 h-4" /></button>
               <div className="pr-6">
                 <div className="flex items-center gap-2 mb-1">
@@ -242,7 +261,7 @@ export default function CarritoVenta({
                 <div className="flex justify-between items-end mt-2">
                   {p.porPeso ? (
                     <div className="flex items-center gap-2">
-                      <input type="text" inputMode="decimal" value={getDisplayValue(p.id)} onChange={(e) => handlePesoChange(p.id, e.target.value)} onBlur={(e) => handlePesoBlur(p.id, e.target.value)} onFocus={() => setIsEditing(prev => ({ ...prev, [p.id]: true }))} className="w-20 px-2 py-2 md:py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-center font-mono" placeholder="0.000" />
+                      <input type="text" inputMode="decimal" value={getDisplayValue(p.id)} onChange={(e) => handlePesoChange(p.id, e.target.value)} onBlur={(e) => handlePesoBlur(p.id, e.target.value)} onFocus={() => setIsEditing(prev => ({ ...prev, [p.id]: true }))} className="w-20 px-2 py-2 md:py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-center font-mono" placeholder="0.00" />
                       <span className="text-xs text-gray-500 font-bold">{p.unidad || 'kg'}</span>
                     </div>
                   ) : (
@@ -263,8 +282,8 @@ export default function CarritoVenta({
         )}
       </div>
 
-      {/* CONTENEDOR STICKY BOTTOM PARA MÓVIL */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 p-4 shadow-[0_-10px_20px_rgba(0,0,0,0.1)] md:relative md:bottom-auto md:left-auto md:right-auto md:z-auto md:bg-transparent md:border-0 md:p-0 md:shadow-none md:mt-auto">
+      {/* CONTENEDOR TOTALES Y PAGOS */}
+      <div className="mt-auto pt-4 border-t border-gray-200 lg:border-0 lg:pt-0 bg-gray-50 lg:bg-transparent pb-4 lg:pb-0">
         {/* TOTALES */}
         <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-3 md:mb-6">
           <div className="flex justify-between items-center mb-1">

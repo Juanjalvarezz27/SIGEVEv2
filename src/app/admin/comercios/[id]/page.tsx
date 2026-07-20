@@ -221,20 +221,20 @@ export default async function ComercioDetallePage({ params, searchParams }: Page
                       <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center mt-auto">
                           <Link 
                             href={currentPage > 1 ? `/admin/comercios/${id}?page=${currentPage - 1}` : '#'}
-                            className={`flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold transition-all ${currentPage <= 1 ? 'opacity-50 pointer-events-none' : 'hover:bg-gray-100 text-gray-700'}`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold transition-all flex-shrink-0 ${currentPage <= 1 ? 'opacity-50 pointer-events-none' : 'hover:bg-gray-100 text-gray-700'}`}
                           >
-                              <ChevronLeft size={14}/> Anterior
+                              <ChevronLeft size={16} className="sm:mr-0.5"/> <span className="hidden sm:inline">Anterior</span>
                           </Link>
                           
-                          <span className="text-xs font-medium text-gray-500">
+                          <span className="text-xs font-medium text-gray-500 text-center">
                               Pág {currentPage} de {totalPaginas}
                           </span>
 
                           <Link 
                             href={currentPage < totalPaginas ? `/admin/comercios/${id}?page=${currentPage + 1}` : '#'}
-                            className={`flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold transition-all ${currentPage >= totalPaginas ? 'opacity-50 pointer-events-none' : 'hover:bg-gray-100 text-gray-700'}`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold transition-all flex-shrink-0 ${currentPage >= totalPaginas ? 'opacity-50 pointer-events-none' : 'hover:bg-gray-100 text-gray-700'}`}
                           >
-                              Siguiente <ChevronRight size={14}/>
+                              <span className="hidden sm:inline">Siguiente</span> <ChevronRight size={16} className="sm:ml-0.5"/>
                           </Link>
                       </div>
                   )}

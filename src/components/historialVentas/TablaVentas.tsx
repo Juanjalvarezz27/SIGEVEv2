@@ -230,47 +230,77 @@ export default function TablaVentasDetalladas({ ventas, cargando }: Props) {
                 </td>
               </tr>
             ) : (
-              ventas.map((venta) => (
-                <tr key={venta.id} className="hover:bg-gray-50/80 transition-colors group block md:table-row border border-gray-200 md:border-0 rounded-xl md:rounded-none mb-4 md:mb-0 bg-white">
-                  <td className="px-4 md:px-6 py-2 md:py-4 text-sm text-gray-500 font-medium flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
-                    <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Hora</span>
-                    <span>{formatFecha(venta.fechaHora)}</span>
+              ventas.map((venta, index) => (
+                <tr key={venta.id} className={`transition-colors group block md:table-row border border-gray-200 md:border-b md:border-x-0 md:border-t-0 md:border-gray-100 rounded-xl md:rounded-none mb-3 md:mb-0 overflow-hidden shadow-sm md:shadow-none ${index % 2 === 0 ? 'bg-white hover:bg-gray-50/80' : 'bg-blue-50/40 hover:bg-blue-50/60'}`}>
+                  
+                  {/* ====== VISTA MÓVIL (Tarjeta compacta) ====== */}
+                  <td className="block md:hidden p-4">
+                     <div className="flex justify-between items-start mb-3">
+                         <div className="flex items-center gap-2">
+                             {venta.deuda ? (
+                                 <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100 shadow-sm">DEUDA</span>
+                             ) : (
+                                 <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">VENTA</span>
+                             )}
+                             <span className="text-xs font-bold text-gray-700 max-w-[100px] truncate">{venta.metodoPago.nombre}</span>
+                         </div>
+                         <div>{formatFecha(venta.fechaHora)}</div>
+                     </div>
+                     <div className="flex justify-between items-end">
+                         <div>
+                            {venta.referencia && (
+                                <div className="mb-1.5">
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-blue-50 text-blue-600 border border-blue-100">
+                                        Ref: #{venta.referencia}
+                                    </span>
+                                </div>
+                            )}
+                            <div className="flex items-baseline gap-2">
+                               <span className="text-lg font-black text-emerald-600">${venta.total.toFixed(2)}</span>
+                               <span className="text-xs font-bold text-indigo-600">Bs {venta.totalBs.toFixed(2)}</span>
+                            </div>
+                         </div>
+                         <button onClick={() => abrirRecibo(venta)} className="p-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg active:scale-95 transition-transform border border-indigo-100 shadow-sm">
+                            <Eye size={18}/>
+                         </button>
+                     </div>
                   </td>
-                  <td className="px-4 md:px-6 py-2 md:py-4 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
-                    <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Tipo</span>
+
+                  {/* ====== VISTA DESKTOP (Columnas de Tabla) ====== */}
+                  <td className="hidden md:table-cell px-6 py-4 text-sm text-gray-500 font-medium">
+                    {formatFecha(venta.fechaHora)}
+                  </td>
+                  <td className="hidden md:table-cell px-6 py-4">
                     <div className="flex items-center gap-2">
                         {venta.deuda ? (
-                            <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100 whitespace-nowrap shadow-sm">
-                                DEUDA
-                            </span>
+                            <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100 shadow-sm">DEUDA</span>
                         ) : (
-                            <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap shadow-sm">
-                                VENTA
-                            </span>
+                            <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">VENTA</span>
                         )}
                         <span className="text-xs font-medium text-gray-600 truncate max-w-[120px]" title={venta.metodoPago.nombre}>
                             {venta.metodoPago.nombre}
                         </span>
                     </div>
                   </td>
-                  <td className="px-4 md:px-6 py-2 md:py-4 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
-                    <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Referencia</span>
-                    <span className="text-xs text-gray-600 font-medium tracking-wide">
-                      {venta.referencia ? `#${venta.referencia}` : "-"}
-                    </span>
+                  <td className="hidden md:table-cell px-6 py-4">
+                    {venta.referencia ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-mono font-bold bg-blue-50 text-blue-600 border border-blue-100">
+                            #{venta.referencia}
+                        </span>
+                    ) : (
+                        <span className="text-xs text-gray-400 font-medium">-</span>
+                    )}
                   </td>
-                  <td className="px-4 md:px-6 py-2 md:py-4 text-right font-bold text-indigo-600 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
-                    <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Total Bs</span>
-                    <span>Bs {venta.totalBs.toFixed(2)}</span>
+                  <td className="hidden md:table-cell px-6 py-4 text-right font-bold text-indigo-600">
+                    Bs {venta.totalBs.toFixed(2)}
                   </td>
-                  <td className="px-4 md:px-6 py-2 md:py-4 text-right font-black text-emerald-600 flex justify-between items-center md:table-cell border-b md:border-0 border-gray-100">
-                    <span className="md:hidden font-bold text-gray-400 text-xs uppercase">Total $</span>
-                    <span>$ {venta.total.toFixed(2)}</span>
+                  <td className="hidden md:table-cell px-6 py-4 text-right font-black text-emerald-600">
+                    $ {venta.total.toFixed(2)}
                   </td>
-                  <td className="px-4 md:px-6 py-3 md:py-4 text-right md:table-cell">
+                  <td className="hidden md:table-cell px-6 py-4 text-right">
                     <button
                       onClick={() => abrirRecibo(venta)}
-                      className="w-full md:w-auto px-3 py-2 text-indigo-600 hover:text-white bg-indigo-50 hover:bg-indigo-600 rounded-lg transition-all active:scale-95 flex justify-center items-center gap-1.5 font-bold text-xs border border-indigo-100 shadow-sm ml-auto whitespace-nowrap"
+                      className="px-3 py-2 text-indigo-600 hover:text-white bg-indigo-50 hover:bg-indigo-600 rounded-lg transition-all active:scale-95 flex justify-center items-center gap-1.5 font-bold text-xs border border-indigo-100 shadow-sm ml-auto whitespace-nowrap"
                       title="Ver Nota de Entrega"
                     >
                       <Eye size={16} />

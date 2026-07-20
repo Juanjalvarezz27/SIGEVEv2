@@ -62,14 +62,14 @@ export default function EstadisticasPage() {
     <div className="w-full max-w-full mx-auto min-h-screen space-y-8 pb-20">
       
       {/* HEADER PREMIUM */}
-      <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-         <div className="flex items-center gap-5">
-            <div className="p-4 rounded-2xl text-white shadow-inner flex flex-shrink-0 items-center justify-center bg-gradient-to-br from-indigo-500 to-violet-600 shadow-indigo-200">
-               <BarChart3 size={32} strokeWidth={2}/>
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6 justify-between items-start md:items-center bg-white p-4 md:p-6 rounded-3xl border border-gray-100 shadow-sm">
+         <div className="flex items-center gap-4 md:gap-5">
+            <div className="p-3 md:p-4 rounded-2xl text-white shadow-inner flex flex-shrink-0 items-center justify-center bg-gradient-to-br from-indigo-500 to-violet-600 shadow-indigo-200">
+               <BarChart3 className="w-6 h-6 md:w-8 md:h-8" strokeWidth={2}/>
             </div>
             <div>
-               <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Analíticas</h1>
-               <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Rendimiento detallado de tu negocio</p>
+               <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Analíticas</h1>
+               <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 font-medium mt-0.5 md:mt-1">Rendimiento detallado de tu negocio</p>
             </div>
          </div>
       </div>

@@ -22,10 +22,10 @@ const BarraBusqueda = ({
   totalPaginas
 }: BarraBusquedaProps) => {
   return (
-    <div className="flex items-center space-x-4">
+    <div className="flex items-center space-x-4 w-full">
       {/* Búsqueda integrada */}
-      <div className="relative">
-        <div className="relative group">
+      <div className="relative w-full sm:w-auto">
+        <div className="relative group w-full">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className={`h-4 w-4 ${terminoBusqueda ? 'text-blue-600' : 'text-gray-400'}`} />
           </div>
@@ -37,7 +37,7 @@ const BarraBusqueda = ({
             placeholder="Buscar producto..."
             className="
               pl-10 pr-8 py-2.5
-              w-64 lg:w-80
+              w-full sm:w-64 lg:w-80
               border border-gray-300 rounded-lg
               bg-white text-sm text-gray-900
               placeholder-gray-500

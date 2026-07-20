@@ -68,9 +68,8 @@ export default function HistorialCierres({ recargarTrigger }: { recargarTrigger:
       >
         <div className="overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          {/* HEAD SIN COMENTARIOS NI ESPACIOS EXTRAÑOS */}
-          <thead className="bg-gray-50 text-xs uppercase text-gray-500 font-semibold border-b border-gray-100">
+        <table className="w-full text-left border-collapse block md:table">
+          <thead className="bg-gray-50 text-xs uppercase text-gray-500 font-semibold border-b border-gray-100 hidden md:table-header-group">
             <tr>
               <th className="px-6 py-4">Fecha</th>
               <th className="px-6 py-4">Sistema</th>
@@ -81,13 +80,13 @@ export default function HistorialCierres({ recargarTrigger }: { recargarTrigger:
             </tr>
           </thead>
           
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="block md:table-row-group p-4 md:p-0">
             {loading ? (
-               <tr><td colSpan={6} className="px-6 py-12"><div className="flex justify-center"><Loader2 className="animate-spin text-indigo-500 w-8 h-8"/></div></td></tr>
+               <tr className="block md:table-row"><td colSpan={6} className="block md:table-cell px-6 py-12"><div className="flex justify-center"><Loader2 className="animate-spin text-indigo-500 w-8 h-8"/></div></td></tr>
             ) : cierres.length === 0 ? (
-               <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-400">No hay cierres registrados aún.</td></tr>
+               <tr className="block md:table-row"><td colSpan={6} className="block md:table-cell px-6 py-8 text-center text-gray-400">No hay cierres registrados aún.</td></tr>
             ) : (
-              cierres.map((cierre) => {
+              cierres.map((cierre, index) => {
                 const esPerfecto = Math.abs(cierre.diferencia) < 0.01;
                 const tieneNotas = cierre.notas && cierre.notas.trim().length > 0;
                 const isExpanded = expandedId === cierre.id;
@@ -97,10 +96,51 @@ export default function HistorialCierres({ recargarTrigger }: { recargarTrigger:
                   <Fragment key={cierre.id}>
                     {/* FILA PRINCIPAL */}
                     <tr 
-                        className={`transition-colors cursor-pointer ${isExpanded ? 'bg-indigo-50/30' : 'hover:bg-gray-50'}`}
+                        className={`transition-colors group block md:table-row border border-gray-200 md:border-b md:border-x-0 md:border-t-0 md:border-gray-100 rounded-xl md:rounded-none mb-3 md:mb-0 p-3 md:p-0 cursor-pointer ${isExpanded ? 'bg-indigo-50/30' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50')} hover:bg-gray-50`}
                         onClick={() => tieneNotas && toggleExpand(cierre.id)}
                     >
-                        <td className="px-6 py-4">
+                        {/* MOBILE CARD VIEW */}
+                        <td className="block md:hidden">
+                            <div className="flex justify-between items-start mb-2 border-b border-gray-100 pb-2">
+                               <div className="flex flex-col">
+                                  <span className="font-bold text-gray-800 text-sm">{new Date(cierre.fecha).toLocaleDateString('es-VE')}</span>
+                                  <span className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5"><Calendar size={10}/> {new Date(cierre.fecha).toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit', hour12:true})}</span>
+                               </div>
+                               <div>
+                                  {esPerfecto ? (
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-[10px] font-bold border border-green-100 uppercase"><CheckCircle2 size={12}/> Cuadrado</span>
+                                  ) : (
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 text-red-700 text-[10px] font-bold border border-red-100 uppercase"><AlertTriangle size={12}/> Descuadre</span>
+                                  )}
+                               </div>
+                            </div>
+                            <div className="flex justify-between items-center mb-2">
+                               <div className="flex flex-col">
+                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sistema</span>
+                                  <span className="text-gray-500 font-medium text-sm">${cierre.totalSistema.toFixed(2)}</span>
+                               </div>
+                               <div className="flex flex-col items-end">
+                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Contado</span>
+                                  <span className="font-bold text-gray-800 text-sm">${cierre.totalReal.toFixed(2)}</span>
+                               </div>
+                            </div>
+                            <div className="flex justify-between items-end">
+                               <div className="flex flex-col">
+                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Diferencia</span>
+                                  <span className={`font-bold text-sm ${esPerfecto ? 'text-gray-300' : 'text-red-500'}`}>
+                                      {esPerfecto ? '--' : `${cierre.diferencia > 0 ? '+' : ''}${cierre.diferencia.toFixed(2)}`}
+                                  </span>
+                               </div>
+                               {tieneNotas && (
+                                   <div className={`p-1.5 flex items-center justify-center rounded-lg transition-colors ${isExpanded ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 bg-gray-100'}`}>
+                                       {isExpanded ? <ChevronUp size={16}/> : <MessageSquare size={16}/>}
+                                   </div>
+                               )}
+                            </div>
+                        </td>
+
+                        {/* DESKTOP TABLE VIEW */}
+                        <td className="hidden md:table-cell px-6 py-4">
                         <div className="flex flex-col">
                             <span className="font-bold text-gray-700 text-sm">
                             {new Date(cierre.fecha).toLocaleDateString('es-VE')}
@@ -110,13 +150,13 @@ export default function HistorialCierres({ recargarTrigger }: { recargarTrigger:
                             </span>
                         </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500 font-medium">
+                        <td className="hidden md:table-cell px-6 py-4 text-sm text-gray-500 font-medium">
                         ${cierre.totalSistema.toFixed(2)}
                         </td>
-                        <td className="px-6 py-4 text-sm font-bold text-gray-800">
+                        <td className="hidden md:table-cell px-6 py-4 text-sm font-bold text-gray-800">
                         ${cierre.totalReal.toFixed(2)}
                         </td>
-                        <td className="px-6 py-4 text-center">
+                        <td className="hidden md:table-cell px-6 py-4 text-center">
                             {esPerfecto ? (
                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-[10px] font-bold border border-green-100 uppercase">
                                     <CheckCircle2 size={12}/> Cuadrado
@@ -127,12 +167,12 @@ export default function HistorialCierres({ recargarTrigger }: { recargarTrigger:
                                 </span>
                             )}
                         </td>
-                        <td className={`px-6 py-4 font-bold text-sm ${esPerfecto ? 'text-gray-300' : 'text-red-500'}`}>
+                        <td className={`hidden md:table-cell px-6 py-4 font-bold text-sm ${esPerfecto ? 'text-gray-300' : 'text-red-500'}`}>
                         {esPerfecto ? '--' : `${cierre.diferencia > 0 ? '+' : ''}${cierre.diferencia.toFixed(2)}`}
                         </td>
                         
                         {/* BOTÓN TOGGLE */}
-                        <td className="px-6 py-4 text-right">
+                        <td className="hidden md:table-cell px-6 py-4 text-right">
                             {tieneNotas && (
                                 <button 
                                     onClick={(e) => {
@@ -150,15 +190,15 @@ export default function HistorialCierres({ recargarTrigger }: { recargarTrigger:
 
                     {/* FILA EXPANDIBLE (NOTAS) */}
                     {isExpanded && tieneNotas && (
-                        <tr className="bg-indigo-50/30 animate-in fade-in slide-in-from-top-1 border-b border-indigo-50">
-                            <td colSpan={6} className="px-6 pb-6 pt-0">
-                                <div className="ml-4 mt-2 bg-white border border-indigo-100 rounded-xl p-4 shadow-sm flex items-start gap-3">
+                        <tr className="block md:table-row bg-indigo-50/30 animate-in fade-in slide-in-from-top-1 border-b border-indigo-50 -mt-2 rounded-b-xl md:mt-0 md:rounded-none">
+                            <td colSpan={6} className="block md:table-cell px-3 md:px-6 pb-4 md:pb-6 pt-0">
+                                <div className="ml-0 md:ml-4 mt-2 bg-white border border-indigo-100 rounded-xl p-3 md:p-4 shadow-sm flex items-start gap-3">
                                     <div className="bg-indigo-50 p-2 rounded-lg text-indigo-500 mt-0.5">
                                         <StickyNote size={16} />
                                     </div>
                                     <div>
-                                        <p className="text-xs font-bold text-gray-400 uppercase mb-1">Nota del Encargado</p>
-                                        <p className="text-sm text-gray-700 leading-relaxed italic">
+                                        <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase mb-0.5 md:mb-1">Nota del Encargado</p>
+                                        <p className="text-xs md:text-sm text-gray-700 leading-relaxed italic">
                                             "{cierre.notas}"
                                         </p>
                                     </div>

@@ -55,6 +55,8 @@ export default function VentasPage() {
   const [page, setPage] = useState(1);
   const limit = 20;
 
+  const [mobileCartOpen, setMobileCartOpen] = useState(false);
+
   const { tasa, loading: loadingTasa } = useTasaBCV();
 
   // Debounce para búsqueda
@@ -105,6 +107,11 @@ export default function VentasPage() {
     }
 
     if (existe) {
+      const pSeleccionado = productosSeleccionados.find(p => p.id === producto.id);
+      if (pSeleccionado && !producto.porPeso && pSeleccionado.cantidad + 1 > producto.stock) {
+          toast.warning(`Solo tienes ${producto.stock} ${producto.unidad || 'unidades'} disponibles`);
+          return;
+      }
       setProductosSeleccionados(prev => prev.map(p => p.id === producto.id ? {
         ...p,
         cantidad: producto.porPeso ? p.cantidad : p.cantidad + 1,
@@ -114,11 +121,11 @@ export default function VentasPage() {
       setProductosSeleccionados(prev => [...prev, {
         ...producto,
         cantidad: 1,
-        peso: producto.porPeso ? 1.000 : undefined,
-        subtotal: producto.porPeso ? (1.000 / (producto.cantidadBase || 1)) * producto.precio : producto.precio
+        peso: producto.porPeso ? 1.00 : undefined,
+        subtotal: producto.porPeso ? (1.00 / (producto.cantidadBase || 1)) * producto.precio : producto.precio
       }]);
     }
-    toast.success(`${producto.nombre} agregado`, { position: "bottom-right", autoClose: 1000 });
+    toast.success(`${producto.nombre} agregado`, { position: "top-center", autoClose: 1000 });
   };
 
   // CORRECCIÓN REACT: Validación fuera del setState
@@ -130,7 +137,7 @@ export default function VentasPage() {
     // 2. Validamos
     if (!producto.porPeso) {
         if (producto.cantidad + 1 > producto.stock) {
-            toast.warning(`No puedes agregar más de ${producto.stock}`);
+            toast.warning(`Solo tienes ${producto.stock} ${producto.unidad || 'unidades'} disponibles`);
             return; // Detenemos aquí, no actualizamos estado
         }
     }
@@ -149,7 +156,7 @@ export default function VentasPage() {
     if (!producto) return;
 
     if (nuevoPeso > producto.stock) {
-        toast.warning(`Solo tienes ${producto.stock} kg disponibles`);
+        toast.warning(`Solo tienes ${producto.stock} ${producto.unidad || (producto.porPeso ? 'kg' : 'unidades')} disponibles`);
         // Opcional: Podrías revertir el input si quieres, pero en CarritoVenta ya tienes un input suelto, así que solo validamos al setear.
         // return; 
     }
@@ -223,6 +230,7 @@ export default function VentasPage() {
       if (res.ok) {
         toast.success('¡Venta registrada!');
         limpiarCarrito();
+        setMobileCartOpen(false); // <--- CERRAMOS EL CARRITO MÓVIL AL TERMINAR
         // Recargar productos para actualizar stock visualmente usando SWR
         recargarProductos();
       } else {
@@ -248,12 +256,15 @@ export default function VentasPage() {
             pagination={pagination}
             cambiarPagina={cambiarPagina}
             cargandoProductos={cargandoProductos}
+            decrementarCantidad={decrementarCantidad}
+            eliminarProducto={eliminarProducto}
           />
         </div>
 
-        <div className="lg:col-span-1">
-          <div className="sticky top-6 h-[calc(100vh-48px)] flex flex-col">
-            <CarritoVenta
+        {/* EN DESKTOP SIEMPRE VISIBLE. EN MOBILE OCULTO A MENOS QUE ESTÉ ABIERTO */}
+        <div className={`lg:col-span-1 fixed inset-0 z-50 bg-gray-50 lg:bg-transparent lg:relative lg:z-auto transition-transform transform ${mobileCartOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'} lg:block overflow-y-auto`}>
+          <div className="w-full min-h-full lg:sticky lg:top-6 lg:h-[calc(100vh-48px)] flex flex-col pt-0 lg:pt-0">
+             <CarritoVenta
               productosSeleccionados={productosSeleccionados}
               incrementarCantidad={incrementarCantidad}
               decrementarCantidad={decrementarCantidad}
@@ -270,10 +281,21 @@ export default function VentasPage() {
               tasaBCV={tasa}
               loadingTasa={loadingTasa}
               limpiarCarrito={limpiarCarrito}
+              onCloseMobile={() => setMobileCartOpen(false)} // Pasamos prop para cerrar
             />
           </div>
         </div>
       </div>
+
+      {/* FAB / Botón Flotante para Móvil */}
+      {!mobileCartOpen && (
+        <div className="lg:hidden fixed bottom-4 left-4 right-4 z-40">
+           <button onClick={() => setMobileCartOpen(true)} className="w-full bg-blue-600 text-white rounded-2xl shadow-xl p-4 font-bold flex justify-between items-center active:scale-95 transition-transform border-2 border-blue-500">
+              <span className="flex items-center gap-2">🛒 Ver Carrito <span className="bg-white text-blue-600 px-2 py-0.5 rounded-full text-xs">{productosSeleccionados.length}</span></span>
+              <span>${calcularTotal().toFixed(2)}</span>
+           </button>
+        </div>
+      )}
     </div>
   );
 }

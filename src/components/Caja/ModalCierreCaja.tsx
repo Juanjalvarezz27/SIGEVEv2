@@ -9,6 +9,7 @@ export default function ModalCierreCaja({ isOpen, onClose, resumenData, onSucces
   const [conteoBs, setConteoBs] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const [notas, setNotas] = useState('');
+  const [activeTab, setActiveTab] = useState<'sistema' | 'conteo'>('sistema');
   
   const { tasa } = useTasaBCV();
   const bcv = tasa || 0;
@@ -85,40 +86,56 @@ export default function ModalCierreCaja({ isOpen, onClose, resumenData, onSucces
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 animate-in fade-in">
-      <div className="bg-white rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-300">
+      <div className="bg-white rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] md:max-h-[95vh] animate-in zoom-in-95 duration-300">
         
         {/* HEADER */}
-        <div className="bg-gray-900 p-6 sm:p-8 text-white flex justify-between items-center relative overflow-hidden">
+        <div className="bg-gray-900 p-5 md:p-8 text-white flex justify-between items-center relative overflow-hidden flex-shrink-0">
             {/* Elemento de diseño de fondo */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full blur-[80px] opacity-20 -mr-20 -mt-20 pointer-events-none"></div>
             
-            <div className="relative z-10">
-                <h3 className="text-2xl sm:text-3xl font-black flex items-center gap-2">
-                    <Lock className="text-indigo-400"/> Cierre de Caja
+            <div className="relative z-10 w-full pr-10">
+                <h3 className="text-xl md:text-3xl font-black flex items-center gap-2">
+                    <Lock className="text-indigo-400 w-5 h-5 md:w-8 md:h-8"/> Cierre de Caja
                 </h3>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mt-2">
-                    <p className="text-gray-400 text-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 md:gap-4 mt-1 md:mt-2">
+                    <p className="text-gray-400 text-xs md:text-sm leading-tight">
                         Verifica que tu dinero físico cuadre perfectamente.
                     </p>
                     {bcv > 0 && (
-                        <div className="bg-gray-800 border border-gray-700 px-3 py-1 rounded-full flex items-center gap-2 w-fit">
-                            <span className="text-xs text-gray-400 font-bold uppercase">Tasa BCV:</span>
-                            <span className="text-sm font-black text-indigo-400">Bs. {bcv.toFixed(2)}</span>
+                        <div className="bg-gray-800 border border-gray-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full flex items-center gap-2 w-fit mt-1 md:mt-0">
+                            <span className="text-[10px] md:text-xs text-gray-400 font-bold uppercase">Tasa BCV:</span>
+                            <span className="text-xs md:text-sm font-black text-indigo-400">Bs. {bcv.toFixed(2)}</span>
                         </div>
                     )}
                 </div>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors bg-white/10 p-3 rounded-full hover:bg-white/20 relative z-10">
-                <X size={24}/>
+            <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors bg-white/10 p-2 md:p-3 rounded-full hover:bg-white/20 relative z-10 absolute right-4 top-4 md:static">
+                <X size={20} className="md:w-6 md:h-6"/>
             </button>
+        </div>
+
+        {/* MOBILE TABS */}
+        <div className="flex lg:hidden bg-gray-100 p-1 m-3 rounded-xl flex-shrink-0">
+          <button 
+             onClick={() => setActiveTab('sistema')} 
+             className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'sistema' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+             El Sistema Espera
+          </button>
+          <button 
+             onClick={() => setActiveTab('conteo')} 
+             className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'conteo' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+             Tu Conteo Físico
+          </button>
         </div>
 
         {/* BODY: DOS COLUMNAS */}
         <div className="flex flex-col lg:flex-row overflow-y-auto custom-scrollbar flex-1 bg-gray-50/50">
             
             {/* COLUMNA IZQUIERDA: EXPECTATIVA DEL SISTEMA */}
-            <div className="lg:w-1/2 p-6 md:p-8 bg-white border-b lg:border-b-0 lg:border-r border-gray-100 flex flex-col shadow-[20px_0_40px_-20px_rgba(0,0,0,0.03)] z-10">
-                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6 flex items-center gap-2">
+            <div className={`lg:w-1/2 p-4 md:p-8 bg-white border-b lg:border-b-0 lg:border-r border-gray-100 flex-col shadow-[20px_0_40px_-20px_rgba(0,0,0,0.03)] z-10 ${activeTab === 'sistema' ? 'flex' : 'hidden lg:flex'}`}>
+                <h4 className="hidden lg:flex text-sm font-bold text-gray-400 uppercase tracking-wider mb-6 items-center gap-2">
                     <Calculator size={18} className="text-gray-300"/> El Sistema Espera
                 </h4>
                 
@@ -161,15 +178,15 @@ export default function ModalCierreCaja({ isOpen, onClose, resumenData, onSucces
                 </div>
 
                 {/* TOTAL SISTEMA */}
-                <div className="mt-8 p-6 sm:p-8 bg-gray-900 rounded-3xl text-white shadow-xl shadow-gray-200 relative overflow-hidden group flex-shrink-0">
+                <div className="mt-8 p-5 md:p-8 bg-gray-900 rounded-3xl text-white shadow-xl shadow-gray-200 relative overflow-hidden group flex-shrink-0">
                     <div className="absolute -right-10 -bottom-10 opacity-10 group-hover:opacity-20 transition-opacity">
                         <DollarSign size={150} />
                     </div>
                     <div className="relative z-10">
-                        <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Total Neto Esperado</p>
-                        <h2 className="text-5xl font-black">${totalSistema.toFixed(2)}</h2>
+                        <p className="text-gray-400 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1 md:mb-2">Total Neto Esperado</p>
+                        <h2 className="text-4xl md:text-5xl font-black">${totalSistema.toFixed(2)}</h2>
                         {resumenData?.resumen.totalEnCajaBs > 0 && (
-                            <p className="text-lg font-medium text-gray-400 mt-2">
+                            <p className="text-sm md:text-lg font-medium text-gray-400 mt-1 md:mt-2">
                                 Bs. {(resumenData.resumen.totalEnCajaBs).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                             </p>
                         )}
@@ -178,8 +195,8 @@ export default function ModalCierreCaja({ isOpen, onClose, resumenData, onSucces
             </div>
 
             {/* COLUMNA DERECHA: CONTEO FÍSICO */}
-            <div className="lg:w-1/2 p-6 md:p-8 flex flex-col">
-                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">Tu Conteo Físico Real</h4>
+            <div className={`lg:w-1/2 p-4 md:p-8 flex-col ${activeTab === 'conteo' ? 'flex' : 'hidden lg:flex'}`}>
+                <h4 className="hidden lg:flex text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">Tu Conteo Físico Real</h4>
                 
                 <div className="flex-1 flex flex-col justify-between">
                     <div className="space-y-4">

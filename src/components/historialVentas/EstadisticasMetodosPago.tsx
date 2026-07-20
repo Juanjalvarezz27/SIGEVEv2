@@ -133,36 +133,36 @@ export default function EstadisticasMetodosPago({ metodosStats }: { metodosStats
         return (
           <div 
             key={nombre} 
-            className={`rounded-2xl border p-5 transition-all hover:shadow-lg hover:-translate-y-0.5 ${style.bg} ${style.border}`}
+            className={`rounded-2xl border p-4 md:p-5 transition-all hover:shadow-lg hover:-translate-y-0.5 ${style.bg} ${style.border}`}
           >
             
-            <div className="flex justify-between items-start mb-4">
+            <div className="flex justify-between items-start mb-3 md:mb-4">
                {/* Icono con fondo coloreado */}
-               <div className={`p-2.5 rounded-xl shadow-sm ${style.iconBg}`}>
+               <div className={`p-2 md:p-2.5 rounded-xl shadow-sm ${style.iconBg}`}>
                   {style.icon}
                </div>
 
                {/* Badge de cantidad */}
                <div className="text-right">
-                  <span className="text-[10px] font-bold bg-white/80 px-2 py-1 rounded-lg shadow-sm border border-black/5 text-gray-600">
+                  <span className="text-[10px] font-bold bg-white/80 px-1.5 py-0.5 md:px-2 md:py-1 rounded-lg shadow-sm border border-black/5 text-gray-600">
                     {data.count} ventas
                   </span>
                </div>
             </div>
 
-            <div className="mb-2">
-               <h4 className={`font-bold text-base truncate uppercase tracking-tight ${style.text}`} title={nombre}>
+            <div className="mb-1 md:mb-2">
+               <h4 className={`font-bold text-sm md:text-base truncate uppercase tracking-tight ${style.text}`} title={nombre}>
                   {nombre}
                </h4>
             </div>
 
-            <div className="flex items-end justify-between mb-4">
+            <div className="flex items-end justify-between mb-3 md:mb-4">
                <div>
-                 <p className="text-2xl font-black tracking-tight text-gray-800">${data.usd.toFixed(2)}</p>
-                 <p className="text-sm text-gray-500 font-bold mt-0.5 tracking-tight">Bs {data.bs.toFixed(2)}</p>
+                 <p className="text-xl md:text-2xl font-black tracking-tight text-gray-800">${data.usd.toFixed(2)}</p>
+                 <p className="text-xs md:text-sm text-gray-500 font-bold md:mt-0.5 tracking-tight">Bs {data.bs.toFixed(2)}</p>
                </div>
-               <div className="text-right pb-1">
-                 <span className={`text-sm font-black ${style.text}`}>{porcentaje.toFixed(0)}%</span>
+               <div className="text-right pb-0.5 md:pb-1">
+                 <span className={`text-xs md:text-sm font-black ${style.text}`}>{porcentaje.toFixed(0)}%</span>
                </div>
             </div>
 

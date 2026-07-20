@@ -25,50 +25,50 @@ export default function ConfiguracionPage() {
          </div>
       </div>
 
-      {/* === TABS DE NAVEGACIÓN ULTRA-CLEAN (ESTILO iOS/VERCEL) - TAMAÑO AUMENTADO === */}
-      <div className="mb-10 flex justify-center w-full px-4 md:px-0">
-        <div className="inline-flex flex-nowrap bg-gray-100/70 p-1.5 rounded-[16px] w-full md:w-auto overflow-x-auto no-scrollbar shadow-inner border border-gray-200/50">
+      {/* === TABS DE NAVEGACIÓN === */}
+      <div className="mb-8 md:mb-10 flex justify-center w-full px-4 md:px-0">
+        <div className="flex bg-gray-100/70 p-1.5 rounded-[16px] w-full md:w-auto shadow-inner border border-gray-200/50">
           
           <button
             onClick={() => setActiveTab('precios')}
             className={`
-              flex-1 md:flex-none flex items-center justify-center px-8 sm:px-10 py-3 rounded-[12px] text-sm sm:text-[15px] font-semibold transition-all duration-300 whitespace-nowrap
+              flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center px-2 py-2 md:px-8 md:py-3 rounded-[12px] transition-all duration-300 gap-1 md:gap-2.5
               ${activeTab === 'precios'
-                ? 'bg-white text-gray-900 shadow-[0_1px_4px_rgba(0,0,0,0.12)]'
-                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200/50'
+                ? 'bg-white shadow-[0_1px_4px_rgba(0,0,0,0.12)]'
+                : 'hover:bg-gray-200/50'
               }
             `}
           >
-            <Tags size={18} className={`mr-2.5 shrink-0 ${activeTab === 'precios' ? 'text-indigo-600' : 'text-gray-400'}`} />
-            Ajuste Precios
+            <Tags size={20} className={`shrink-0 md:w-[18px] md:h-[18px] ${activeTab === 'precios' ? 'text-indigo-600' : 'text-gray-400'}`} />
+            <span className={`text-[10px] md:text-[15px] font-bold md:font-semibold whitespace-nowrap ${activeTab === 'precios' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-800'}`}>Ajustes</span>
           </button>
 
           <button
             onClick={() => setActiveTab('negocio')}
             className={`
-              flex-1 md:flex-none flex items-center justify-center px-8 sm:px-10 py-3 rounded-[12px] text-sm sm:text-[15px] font-semibold transition-all duration-300 whitespace-nowrap
+              flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center px-2 py-2 md:px-8 md:py-3 rounded-[12px] transition-all duration-300 gap-1 md:gap-2.5
               ${activeTab === 'negocio'
-                ? 'bg-white text-gray-900 shadow-[0_1px_4px_rgba(0,0,0,0.12)]'
-                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200/50'
+                ? 'bg-white shadow-[0_1px_4px_rgba(0,0,0,0.12)]'
+                : 'hover:bg-gray-200/50'
               }
             `}
           >
-            <CreditCard size={18} className={`mr-2.5 shrink-0 ${activeTab === 'negocio' ? 'text-indigo-600' : 'text-gray-400'}`} />
-            Métodos Pago
+            <CreditCard size={20} className={`shrink-0 md:w-[18px] md:h-[18px] ${activeTab === 'negocio' ? 'text-indigo-600' : 'text-gray-400'}`} />
+            <span className={`text-[10px] md:text-[15px] font-bold md:font-semibold whitespace-nowrap ${activeTab === 'negocio' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-800'}`}>Métodos</span>
           </button>
 
           <button
             onClick={() => setActiveTab('perfil')}
             className={`
-              flex-1 md:flex-none flex items-center justify-center px-8 sm:px-10 py-3 rounded-[12px] text-sm sm:text-[15px] font-semibold transition-all duration-300 whitespace-nowrap
+              flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center px-2 py-2 md:px-8 md:py-3 rounded-[12px] transition-all duration-300 gap-1 md:gap-2.5
               ${activeTab === 'perfil'
-                ? 'bg-white text-gray-900 shadow-[0_1px_4px_rgba(0,0,0,0.12)]'
-                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200/50'
+                ? 'bg-white shadow-[0_1px_4px_rgba(0,0,0,0.12)]'
+                : 'hover:bg-gray-200/50'
               }
             `}
           >
-            <User size={18} className={`mr-2.5 shrink-0 ${activeTab === 'perfil' ? 'text-indigo-600' : 'text-gray-400'}`} />
-            Perfil
+            <User size={20} className={`shrink-0 md:w-[18px] md:h-[18px] ${activeTab === 'perfil' ? 'text-indigo-600' : 'text-gray-400'}`} />
+            <span className={`text-[10px] md:text-[15px] font-bold md:font-semibold whitespace-nowrap ${activeTab === 'perfil' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-800'}`}>Perfil</span>
           </button>
         </div>
       </div>

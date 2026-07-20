@@ -140,8 +140,8 @@ const ModalEditarProducto = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={handleClose} />
-      <div className="flex min-h-full items-end md:items-center justify-center p-0 md:p-4">
-        <div className="relative bg-white rounded-t-3xl md:rounded-xl shadow-xl max-w-2xl w-full animate-in slide-in-from-bottom-full md:slide-in-from-bottom-0 md:zoom-in-95 duration-300">
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="relative bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-300">
           
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div className="flex items-center">

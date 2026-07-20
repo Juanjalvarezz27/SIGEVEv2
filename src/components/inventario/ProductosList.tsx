@@ -222,8 +222,8 @@ const ProductosList = () => {
               ) : productos.length === 0 ? (
                 <tr><td colSpan={5} className="text-center py-10 text-gray-500 block md:table-cell">No hay productos.</td></tr>
               ) : (
-                productos.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50 block md:table-row border border-gray-200 md:border-0 rounded-xl md:rounded-none mb-4 md:mb-0 p-4 md:p-0 bg-white">
+                productos.map((p, index) => (
+                  <tr key={p.id} className={`hover:bg-blue-100 block md:table-row border border-gray-200 md:border-0 rounded-xl md:rounded-none mb-4 md:mb-0 p-4 md:p-0 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-blue-50/50'}`}>
                     <td className="px-0 md:px-6 py-2 md:py-4 flex flex-col md:table-cell border-b md:border-0 border-gray-100 pb-3 md:pb-4 min-w-[150px]">
                       <span className="md:hidden font-bold text-gray-400 text-xs uppercase mb-1">Producto</span>
                       <div>
@@ -259,25 +259,27 @@ const ProductosList = () => {
 
         {/* PAGINACIÓN: Centrada en móvil */}
         {totalPages > 1 && (
-          <div className="px-4 sm:px-6 py-4 md:py-6 border-t flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
+          <div className="px-4 sm:px-6 py-4 md:py-6 border-t flex flex-row justify-between items-center gap-2 sm:gap-4 bg-gray-50">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={!hasPrevPage}
-              className="w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex justify-center items-center gap-2 text-sm font-medium text-gray-700 transition-colors shadow-sm"
+              className="flex-shrink-0 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex justify-center items-center gap-1.5 text-xs sm:text-sm font-medium text-gray-700 transition-colors shadow-sm hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ChevronLeft size={16} /> Anterior
+              <ChevronLeft size={18} className="sm:mr-1.5" /> <span className="hidden sm:inline">Anterior</span>
             </button>
             
-            <span className="text-sm text-gray-600 font-bold bg-white px-3 py-1 rounded border border-gray-200">
-               Página {currentPage} de {totalPages}
-            </span>
+            <div className="flex flex-col items-center text-center">
+              <span className="text-xs sm:text-sm text-gray-600 font-bold bg-white px-3 py-1 rounded border border-gray-200">
+                 Página {currentPage} de {totalPages}
+              </span>
+            </div>
 
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={!hasNextPage}
-              className="w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex justify-center items-center gap-2 text-sm font-medium text-gray-700 transition-colors shadow-sm"
+              className="flex-shrink-0 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex justify-center items-center gap-1.5 text-xs sm:text-sm font-medium text-gray-700 transition-colors shadow-sm hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Siguiente <ChevronRight size={16} />
+              <span className="hidden sm:inline">Siguiente</span> <ChevronRight size={18} className="sm:ml-1.5" />
             </button>
           </div>
         )}

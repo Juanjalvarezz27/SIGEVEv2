@@ -61,8 +61,8 @@ export default function HistorialGastos({ recargarTrigger }: { recargarTrigger: 
       >
         <div className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-gray-50 text-xs uppercase text-gray-500 font-semibold border-b border-gray-100">
+            <table className="w-full text-left border-collapse block md:table">
+              <thead className="bg-gray-50 text-xs uppercase text-gray-500 font-semibold border-b border-gray-100 hidden md:table-header-group">
                 <tr>
                   <th className="px-6 py-4">Descripción</th>
                   <th className="px-6 py-4">Fecha y Hora</th>
@@ -70,16 +70,34 @@ export default function HistorialGastos({ recargarTrigger }: { recargarTrigger: 
                 </tr>
               </thead>
               
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="block md:table-row-group p-4 md:p-0">
                 {loading ? (
-                   <tr><td colSpan={3} className="px-6 py-12"><div className="flex justify-center"><Loader2 className="animate-spin text-red-500 w-8 h-8"/></div></td></tr>
+                   <tr className="block md:table-row"><td colSpan={3} className="block md:table-cell px-6 py-12"><div className="flex justify-center"><Loader2 className="animate-spin text-red-500 w-8 h-8"/></div></td></tr>
                 ) : gastos.length === 0 ? (
-                   <tr><td colSpan={3} className="px-6 py-8 text-center text-gray-400">No hay gastos registrados.</td></tr>
+                   <tr className="block md:table-row"><td colSpan={3} className="block md:table-cell px-6 py-8 text-center text-gray-400">No hay gastos registrados.</td></tr>
                 ) : (
-                  gastos.map((gasto) => (
-                    <tr key={gasto.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 font-medium text-gray-700">{gasto.descripcion}</td>
-                      <td className="px-6 py-4">
+                  gastos.map((gasto, index) => (
+                    <tr key={gasto.id} className={`transition-colors group block md:table-row border border-gray-200 md:border-b md:border-x-0 md:border-t-0 md:border-gray-100 rounded-xl md:rounded-none mb-3 md:mb-0 p-3 md:p-0 ${index % 2 === 0 ? 'bg-white' : 'bg-red-50/20'}`}>
+                      {/* MOBILE CARD VIEW */}
+                      <td className="block md:hidden">
+                          <div className="flex justify-between items-start mb-2 gap-2">
+                             <span className="font-bold text-gray-800 text-sm leading-tight">{gasto.descripcion}</span>
+                             <span className="font-black text-red-600 text-sm whitespace-nowrap">- ${gasto.monto.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between items-end mt-1">
+                             <div className="flex flex-col">
+                                <span className="font-medium text-gray-600 text-xs">{new Date(gasto.fecha).toLocaleDateString('es-VE')}</span>
+                                <span className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5"><Calendar size={10}/> {new Date(gasto.fecha).toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit', hour12:true})}</span>
+                             </div>
+                             {gasto.montoBs && (
+                                <span className="text-xs text-gray-500 font-medium">(Bs. {gasto.montoBs.toFixed(2)})</span>
+                             )}
+                          </div>
+                      </td>
+
+                      {/* DESKTOP TABLE VIEW */}
+                      <td className="hidden md:table-cell px-6 py-4 font-medium text-gray-700">{gasto.descripcion}</td>
+                      <td className="hidden md:table-cell px-6 py-4">
                         <div className="flex flex-col">
                             <span className="font-bold text-gray-700 text-sm">
                             {new Date(gasto.fecha).toLocaleDateString('es-VE')}
@@ -89,7 +107,7 @@ export default function HistorialGastos({ recargarTrigger }: { recargarTrigger: 
                             </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="hidden md:table-cell px-6 py-4 text-right">
                           <div className="flex flex-col items-end">
                             <span className="font-bold text-red-600 text-sm">
                                 - ${gasto.monto.toFixed(2)}
