@@ -7,7 +7,9 @@ const productoSchema = z.object({
   nombre: z.string().min(1, "El nombre no puede estar vacío"),
   precio: z.coerce.number().positive("El precio debe ser mayor a 0"),
   stock: z.coerce.number().min(0).default(0).catch(0),
-  porPeso: z.coerce.boolean().optional().default(false).catch(false)
+  porPeso: z.coerce.boolean().optional().default(false).catch(false),
+  unidad: z.string().optional().default("kg"),
+  cantidadBase: z.coerce.number().optional().default(1).catch(1)
 });
 
 export async function POST(request: Request) {
@@ -43,7 +45,7 @@ export async function POST(request: Request) {
             return;
         }
 
-        const { nombre, precio, stock, porPeso } = result.data;
+        const { nombre, precio, stock, porPeso, unidad, cantidadBase } = result.data;
         const nombreLimpio = nombre.trim();
 
         // Duplicado manual check
@@ -56,7 +58,9 @@ export async function POST(request: Request) {
             nombre: nombreLimpio,
             precio,
             stock,
-            porPeso, 
+            porPeso,
+            unidad,
+            cantidadBase,
             comercioId: comercioId,
             activo: true
         });

@@ -250,7 +250,7 @@ const ModalAgregarProducto = ({
                                     {isOpenSelect && (
                                         <>
                                             <div className="fixed inset-0 z-10" onClick={() => setIsOpenSelect(false)}></div>
-                                            <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto top-full left-0">
+                                            <div className="absolute z-20 w-full mb-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto bottom-full left-0">
                                                 {UNIDADES.map(u => (
                                                     <div 
                                                         key={u.value}

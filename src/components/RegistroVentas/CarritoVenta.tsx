@@ -243,7 +243,7 @@ export default function CarritoVenta({
       </div>
 
       {/* ITEMS */}
-      <div className="space-y-2 mb-4 pr-1 lg:overflow-y-auto lg:flex-1 custom-scrollbar">
+      <div className="space-y-2 mb-4 pr-1 lg:overflow-y-auto lg:flex-1 min-h-0 custom-scrollbar lg:min-h-[150px]">
         {productosSeleccionados.length === 0 ? (
           <div className="text-center py-10 bg-white lg:bg-gray-50 rounded-lg border border-dashed border-gray-200 h-full flex flex-col justify-center items-center">
             <ShoppingCart className="w-10 h-10 text-gray-300 mb-2" />
@@ -285,7 +285,7 @@ export default function CarritoVenta({
       {/* CONTENEDOR TOTALES Y PAGOS */}
       <div className="mt-auto pt-4 border-t border-gray-200 lg:border-0 lg:pt-0 bg-gray-50 lg:bg-transparent pb-4 lg:pb-0">
         {/* TOTALES */}
-        <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-3 md:mb-6">
+        <div className="bg-gray-50 rounded-lg p-3 md:p-3 mb-3 md:mb-4">
           <div className="flex justify-between items-center mb-1">
             <span className="text-gray-600 font-medium">Total USD</span>
             <span className="text-2xl font-black text-blue-600">${total.toFixed(2)}</span>
@@ -299,12 +299,12 @@ export default function CarritoVenta({
         </div>
 
         {/* PAGOS */}
-        <div className="mb-4 md:mb-6 space-y-3">
+        <div className="mb-4 md:mb-4 space-y-3">
           <div>
-            <label className="hidden md:block text-xs font-bold text-gray-500 uppercase mb-2">Método de Pago</label>
-            <div className="grid grid-cols-4 md:grid-cols-2 gap-2">
+            <label className="hidden md:block text-[10px] font-bold text-gray-500 uppercase mb-2">Método de Pago</label>
+            <div className="grid grid-cols-3 gap-2">
               {metodosPago.map(m => (
-                <button key={m.id} onClick={() => setMetodoPagoId(m.id)} className={`p-2 md:p-3 rounded-lg border text-xs md:text-sm font-medium flex flex-col items-center gap-1 transition-all ${metodoPagoId === m.id ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-500' : 'border-gray-200 hover:border-blue-300 text-gray-600'}`}>
+                <button key={m.id} onClick={() => setMetodoPagoId(m.id)} className={`p-2 rounded-lg border text-[10px] md:text-xs font-medium flex flex-col items-center gap-1 transition-all ${metodoPagoId === m.id ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-500' : 'border-gray-200 hover:border-blue-300 text-gray-600'}`}>
                   {getMetodoPagoIcon(m.nombre)} <span className="truncate w-full text-center">{m.nombre.split(' ')[0]}</span>
                 </button>
               ))}

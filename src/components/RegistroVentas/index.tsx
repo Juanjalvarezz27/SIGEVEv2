@@ -262,8 +262,8 @@ export default function VentasPage() {
         </div>
 
         {/* EN DESKTOP SIEMPRE VISIBLE. EN MOBILE OCULTO A MENOS QUE ESTÉ ABIERTO */}
-        <div className={`lg:col-span-1 fixed inset-0 z-50 bg-gray-50 lg:bg-transparent lg:relative lg:z-auto transition-transform transform ${mobileCartOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'} lg:block overflow-y-auto`}>
-          <div className="w-full min-h-full lg:sticky lg:top-6 lg:h-[calc(100vh-48px)] flex flex-col pt-0 lg:pt-0">
+        <div className={`lg:col-span-1 fixed inset-0 z-50 bg-gray-50 lg:bg-transparent lg:relative lg:z-auto transition-transform transform ${mobileCartOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'} lg:block`}>
+          <div className="w-full min-h-full lg:sticky lg:top-6 lg:max-h-[calc(100vh-48px)] flex flex-col pt-0 lg:pt-0">
              <CarritoVenta
               productosSeleccionados={productosSeleccionados}
               incrementarCantidad={incrementarCantidad}
