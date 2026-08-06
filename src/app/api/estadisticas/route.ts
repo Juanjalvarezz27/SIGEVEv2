@@ -243,7 +243,9 @@ export async function GET(request: NextRequest) {
       where: baseWhere,
       _sum: { total: true }
     });
-    const dbMetodos = await prisma.metodosPago.findMany();
+    const dbMetodos = await prisma.metodosPago.findMany({
+      where: { comercioId: session.user.comercioId }
+    });
     const graficoMetodos = metodosGroup
       .map(g => ({
         name: dbMetodos.find(m => m.id === g.metodoPagoId)?.nombre || 'Otro',
